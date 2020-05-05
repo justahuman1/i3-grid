@@ -3,6 +3,7 @@ import i3
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
+    "VGA",
 }
 
 
@@ -29,18 +30,22 @@ class FloatUtils:
         socket = i3.Socket()
 
 
-class WindowCalculator:
+class MonitorCalculator:
     def __init__(self, ):
         super().__init__()
 
-    def get_offset_center(self, window_tensor, monitor_tensor):
+    def get_offset(self, window_tensor, monitor_tensor):
+        # 1) Calculate monitor center
+        # 2) Calculate window offset
+        # 3) Monitor center - offset = true center
+        pass
 
 
     def get_screen_center(self, width, height):
         return [(width/2), int(height/2)]
 
 
-class FloatManager(FloatUtils, WindowCalculator):
+class FloatManager(FloatUtils, MonitorCalculator):
     def __init__(self, rows=2, cols=2, target=0):
         super().__init__()
         if target == 0:
