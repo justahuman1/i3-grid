@@ -1,5 +1,11 @@
 import floatwm
 
+# FloatManager Test
+
+
+def center_test():
+    man = floatwm.FloatManager()
+
 # Utils Unit test
 
 
@@ -9,4 +15,4 @@ def metadata_test():
     print(util.area_matrix)
     print(util.current_display)
 
-metadata_test()
+center_test()
