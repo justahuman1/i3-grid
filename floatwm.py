@@ -29,7 +29,18 @@ class FloatUtils:
         socket = i3.Socket()
 
 
-class FloatManager(FloatUtils):
+class WindowCalculator:
+    def __init__(self, ):
+        super().__init__()
+
+    def get_offset_center(self, window_tensor, monitor_tensor):
+
+
+    def get_screen_center(self, width, height):
+        return [(width/2), int(height/2)]
+
+
+class FloatManager(FloatUtils, WindowCalculator):
     def __init__(self, rows=2, cols=2, target=0):
         super().__init__()
         if target == 0:
@@ -52,8 +63,6 @@ class FloatManager(FloatUtils):
         # print(workspace_num)
         # print(x_positioning)
 
-    def get_screen_center(self, width, height):
-        return [(width/2), int(height/2)]
 
     def get_current_window(self):
         tree = i3.get_tree()
