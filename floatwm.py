@@ -1,5 +1,6 @@
 import i3, subprocess
 from typing import List
+import sys
 
 DISPLAY_MONITORS = {
     "eDP1",
@@ -21,13 +22,18 @@ class Utils:
         return out.stdout
 
     @staticmethod
-    def make_i3msg_command(command: str, data:list=[1189, 652]):
+    def make_i3msg_command(command: str, data:Tensor=[1189, 652]):
+        # 1189, 652 is a standard i3 window size for floating nodes
         if command == 'resize':
-            """Data should be a len(Vector) == 2"""
-            if isinstance(data, (list, tuple)):
+            # Data should be a len(Vector) == 2 (width, height)
+            if isinstance(data, (list, tuple)) and len(data) == 2:
                 return f"i3-msg resize set {data[0]} {data[1]}"
             else:
-                raise ValueError("Incorrect data type for i3 command")
+                raise ValueError("Incorrect data type/length for i3 command")
+
+    @staticmethod
+    def get_cmd_args():
+        pass
 
 
 class FloatUtils:

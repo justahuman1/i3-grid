@@ -6,7 +6,12 @@ import floatwm
 def center_test():
     man = floatwm.FloatManager()
 
+
 # Utils Unit test
+
+
+def cmd_line_test():
+    args = '4 4'  # test a 4x4 floating grid
 
 
 def metadata_test():
