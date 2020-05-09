@@ -1,10 +1,33 @@
-import i3
+import i3, subprocess
+from typing import List
 
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
     "VGA",
 }
+# Custom Types
+Tensor = List[int]
+
+class Utils:
+    def __init__(self, ):
+        super().__init__()
+
+    @staticmethod
+    def dipatch_bash_command(command_str: str) -> str:
+        if (not command_str or
+           command_str.strip() == ""): raise ValueError("null command")
+        out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
+        return out.stdout
+
+    @staticmethod
+    def make_i3msg_command(command: str, data:list=[1189, 652]):
+        if command == 'resize':
+            """Data should be a len(Vector) == 2"""
+            if isinstance(data, (list, tuple)):
+                return f"i3-msg resize set {data[0]} {data[1]}"
+            else:
+                raise ValueError("Incorrect data type for i3 command")
 
 
 class FloatUtils:
@@ -15,6 +38,7 @@ class FloatUtils:
 
     def _calc_metadata(self):
         self.displays = i3.get_outputs()
+
         # Widths * Lengths (seperated to retain composition for children)
         total_size = [[], []]
         for display in self.displays:
@@ -26,7 +50,7 @@ class FloatUtils:
         # print(active)
         return total_size, active
 
-    def current_display(self):
+    def get_i3_socket(self):
         socket = i3.Socket()
 
 
@@ -41,8 +65,8 @@ class MonitorCalculator:
         pass
 
 
-    def get_screen_center(self, width, height):
-        return [(width/2), int(height/2)]
+    def get_screen_center(self, width:int, height:int) -> Tensor :
+        return [int(width/2), int(height/2)]
 
 
 class FloatManager(FloatUtils, MonitorCalculator):
@@ -84,8 +108,11 @@ class FloatManager(FloatUtils, MonitorCalculator):
             self.find_focused_window(w)
         print(self.iter)
         print(self.focused_node)
+        cmd = Utils.make_i3msg_command(command="resize")
+        Utils.dipatch_bash_command(command_str=cmd)
 
     def find_focused_window(self, node):
+        # DFS to find the current window
         self.iter += 1
         if not isinstance(node, dict): return
         if node['focused']:
@@ -124,5 +151,6 @@ class FloatManager(FloatUtils, MonitorCalculator):
             # if
 
 if __name__ == "__main__":
-    print(i3)
+    print("Nothing to run in the module...")
+    # print(i3)
     # div = 4
