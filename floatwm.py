@@ -16,10 +16,8 @@ class Utils:
 
     @staticmethod
     def dipatch_bash_command(command_str: str) -> str:
-        print("In dis")
         if (not command_str or
            command_str.strip() == ""): raise ValueError("null command")
-        # print(command_str.split(" "))
         out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
         return out.stdout
 
@@ -83,7 +81,7 @@ class MonitorCalculator:
         pass
 
 
-    def get_screen_center(self, width:int, height:int) -> Tensor :
+    def get_screen_center(self, width:int, height:int) -> Tensor:
         return [int(width/2), int(height/2)]
 
 
@@ -110,6 +108,8 @@ class FloatManager(FloatUtils, MonitorCalculator):
         # print(workspace_num)
         # print(x_positioning)
 
+    def make_float(self):
+        pass
 
     def get_current_window(self):
         tree = i3.get_tree()
@@ -126,8 +126,8 @@ class FloatManager(FloatUtils, MonitorCalculator):
             self.find_focused_window(w)
         print(self.iter)
         print(self.focused_node)
-        cmd = Utils.make_i3msg_command(command="resize")
-        Utils.dipatch_bash_command(command_str=cmd)
+        # cmd = Utils.make_i3msg_command(command="resize")
+        # Utils.dipatch_bash_command(command_str=cmd)
 
     def find_focused_window(self, node):
         # DFS to find the current window
@@ -174,7 +174,6 @@ if __name__ == "__main__":
         while 1:
             cmd = input('>>> ')
             print(eval(cmd))
+        exit(0)
 
-    # print(sys.argv)
-    # print(i3)
-    # div = 4
+
