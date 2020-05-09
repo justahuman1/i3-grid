@@ -16,8 +16,10 @@ class Utils:
 
     @staticmethod
     def dipatch_bash_command(command_str: str) -> str:
+        print("In dis")
         if (not command_str or
            command_str.strip() == ""): raise ValueError("null command")
+        # print(command_str.split(" "))
         out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
         return out.stdout
 
@@ -32,8 +34,18 @@ class Utils:
                 raise ValueError("Incorrect data type/length for i3 command")
 
     @staticmethod
-    def get_cmd_args():
-        pass
+    def get_cmd_args(elem=None):
+        try:
+            if elem:
+                if elem > len(sys.argv[1:]):
+                    return None
+                elif len(sys.argv[1:]) < 2:
+                    return [4, 4][elem]
+                return int(sys.argv[elem])
+            else:
+                return [int(i) for i in sys.argv[1:]] or [4, 4]
+        except ValueError:
+            return [4, 4]
 
 
 class FloatUtils:
@@ -157,6 +169,12 @@ class FloatManager(FloatUtils, MonitorCalculator):
             # if
 
 if __name__ == "__main__":
-    print("Nothing to run in the module...")
+    if "debug" in sys.argv:
+        print("Entering debug mode. Evaluating input:")
+        while 1:
+            cmd = input('>>> ')
+            print(eval(cmd))
+
+    # print(sys.argv)
     # print(i3)
     # div = 4
