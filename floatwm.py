@@ -16,6 +16,10 @@ Tensor = List[Location]
 # Represents the display monitor to their respective index
 DisplayMap = Dict[int, Location]
 
+# TODO: replace global variables with rc file
+# TODO: handle multiple monitor (behind summation) offset
+# TODO: add grid options
+
 class Utils:
     def __init__(self, ):
         super().__init__()
