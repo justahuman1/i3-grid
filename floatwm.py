@@ -29,21 +29,27 @@ class Utils:
     def dipatch_bash_command(command_str: str) -> str:
         if (not command_str or
            command_str.strip() == ""): raise ValueError("null command")
+
         out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
         return out.stdout
 
     @staticmethod
-    def make_i3msg_command(command: str, data:Location=Location(1189, 652)):
+    def dispatch_i3msg_com(command: str, data:Location=Location(1189, 652)):
         # Immutable location tuple accounts for mutation error
         if not isinstance(data, (list, tuple)) and len(data) == 2:
             raise ValueError("Incorrect data type/length for i3 command")
-        msg = 'i3-msg'
+        w = str(data.width) if data.width > 0 else '0'
+        h = str(data.height) if data.height > 0 else '0'
         if command == 'resize':
             # 1189, 652 is a standard i3 window size for floating nodes
             # Data should be a len(Vector) == 2 (width, height)
-            return i3.resize('set', data.width, data.height)
+            return i3.resize('set', w, h)
         if command == 'move':
-            return i3.move('window', 'position', data.width, data.height)
+            print(f'w: {w}, h: {h}"')
+            return i3.move('window', 'position', w, h)
+        if command == 'float':
+            return i3.floating('toggle')
+
 
     @staticmethod
     def get_cmd_args(elem=None):
@@ -143,6 +149,7 @@ class FloatManager(FloatUtils, MonitorCalculator):
     def __init__(self, rows=2, cols=2, target=0):
         super().__init__()
         if target == 0:
+            self.make_float()
             self.move_to_center()
         self.rows = rows
         self.cols = cols
@@ -157,17 +164,21 @@ class FloatManager(FloatUtils, MonitorCalculator):
         # we call the focused node the target
         target_pos = Location(width=self.focused_node['rect']['width'],
                  height=self.focused_node['rect']['height'])
+        print('target:', target_pos)
 
         # True center (accounting for multiple displays)
         true_center = self.get_offset(window=self.area_matrix[workspace_num],
                                       target=target_pos)
+        print('true:', true_center)
+        print('matrix', self.area_matrix)
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
-        cmd = Utils.make_i3msg_command(command="move", data=true_center)
-        print(cmd)
-        # Utils.dipatch_bash_command(command_str=cmd)
+
+        # Dispatch final command
+        Utils.dispatch_i3msg_com(command="move", data=true_center)
 
     def make_float(self):
+        Utils.dispatch_i3msg_com(command='float')
         pass
 
     def assign_focus_node(self):
