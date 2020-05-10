@@ -9,9 +9,12 @@ DISPLAY_MONITORS = {
     "VGA",
 }
 # Custom Types
+# The x and y coordinates of any X11 object
 Location = namedtuple('Location', 'width height')
+# A vector of location objects
 Tensor = List[Location]
-WindowArray = Dict[int, Location]
+# Represents the display monitor to their respective index
+DisplayMap = Dict[int, Location]
 
 class Utils:
     def __init__(self, ):
@@ -25,14 +28,18 @@ class Utils:
         return out.stdout
 
     @staticmethod
-    def make_i3msg_command(command: str, data:Tensor=[1189, 652]):
-        # 1189, 652 is a standard i3 window size for floating nodes
+    def make_i3msg_command(command: str, data:Location=Location(1189, 652)):
+        # Immutable location tuple accounts for mutation error
+        if not isinstance(data, (list, tuple)) and len(data) == 2:
+            raise ValueError("Incorrect data type/length for i3 command")
+        msg = 'i3-msg'
         if command == 'resize':
+            # 1189, 652 is a standard i3 window size for floating nodes
             # Data should be a len(Vector) == 2 (width, height)
-            if isinstance(data, (list, tuple)) and len(data) == 2:
-                return f"i3-msg resize set {data[0]} {data[1]}"
-            else:
-                raise ValueError("Incorrect data type/length for i3 command")
+            return f"{msg} resize set {data.width} {data.height}"
+        if command == 'move':
+            return f"{msg} move window position " \
+                   f"{data[0]} {data[1]}"
 
     @staticmethod
     def get_cmd_args(elem=None):
@@ -55,7 +62,7 @@ class FloatUtils:
         assert len(self.current_display) > 0, "Incorrect Display Input"
         # self.current_display = self.current_display
 
-    def _calc_metadata(self) -> (WindowArray, dict):
+    def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = i3.get_outputs()
 
         # Widths * Lengths (seperated to retain composition for children)
@@ -84,15 +91,24 @@ class MonitorCalculator:
     def __init__(self, ):
         super().__init__()
 
-    def get_offset(self, window: Location, target: Location):
+    def get_offset(self, window: Location, target: Location) -> Location:
         # 1) Calculate monitor center
         # 2) Calculate window offset
         # 3) Monitor center - offset = true center
-        pass
+        # 3 if) tensors are intersecting
+        display_offset, target_offset = self.get_screen_center(
+                window, target)
+        center_x = display_offset.width - target_offset.width
+        # Heigh is half of the respective monitor
+        # The tensors are parallel hence, no summation.
+        center_y = display_offset.height
+
+        return Location(center_x, center_y)
 
 
-    def get_screen_center(self, width:int, height:int) -> Location:
-        return Location(int(width/2), int(height/2))
+    def get_screen_center(self, *windows: Location) -> Location:
+        return [Location(int(window.width/2), int(window.height/2))
+                for window in windows]
 
 class Movements:
     def __init__(self, ):
@@ -110,36 +126,35 @@ class FloatManager(FloatUtils, MonitorCalculator):
     def move_to_center(self):
         workspace_num = self.get_wk_number()
         # Get the focused node
-        self.get_current_window()
+        self.assign_focus_node()
+        # print(self.focused_node)
 
         # we call the focused node the target
         target_pos = Location(width=self.focused_node['rect']['width'],
                  height=self.focused_node['rect']['height'])
 
-        self.get_offset(window=self.area_matrix[workspace_num],
-                        target=target_pos)
-        print(workspace_num)
-        print(self.area_matrix[workspace_num])
-        # print(x_positioning)
+        # True center (accounting for multiple displays)
+        true_center = self.get_offset(window=self.area_matrix[workspace_num],
+                                      target=target_pos)
+        # TODO
+        # Apply offset (user preference (due to polybar, etc.))
+        cmd = Utils.make_i3msg_command(command="move", data=true_center)
+        print(cmd)
+        # Utils.dipatch_bash_command(command_str=cmd)
 
     def make_float(self):
         pass
 
-    def get_current_window(self):
+    def assign_focus_node(self):
         tree = i3.get_tree()
-        # print(self.current_display['output'])
         # for node in tree:
         wkspc = [node for node in tree['nodes']
                 if node['name'] == self.current_display['output']]
         assert len(wkspc) > 0, "window could not be found"
         # wkspc = wkspc[0]
         self.iter = 0
-        # print(len(wkspc))
         for w in wkspc:
-            # print(type(w))
             self.find_focused_window(w)
-        # cmd = Utils.make_i3msg_command(command="resize")
-        # Utils.dipatch_bash_command(command_str=cmd)
 
     def find_focused_window(self, node):
         # DFS to find the current window
