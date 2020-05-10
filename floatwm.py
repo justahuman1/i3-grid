@@ -1,8 +1,9 @@
 import i3, subprocess
 from typing import List, Dict
-import sys
+import sys, os
 from collections import namedtuple
 
+RC_FILE_NAME = '.floatrc'
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
@@ -58,6 +59,27 @@ class Utils:
                 return [int(i) for i in sys.argv[1:]] or [4, 4]
         except ValueError:
             return [4, 4]
+
+    @staticmethod
+    def read_config():
+        default_locs = [
+            '~/.config/i3float/floatrc'
+            '~/.config/floatrc',
+            '~/.floatrc',
+                os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                RC_FILE_NAME)
+        ]
+        target_loc = None
+        for loc in default_locs:
+            if os.path.isfile(loc):
+                target_loc = loc
+                break
+
+        if not target_loc:
+            raise ValueError("No dotfile config found. " \
+                             "Add to ~/.floatrc or ~/.config/floatrc " \
+                             "or ~/.config/i3float/floatrc")
 
 
 class FloatUtils:
@@ -199,12 +221,15 @@ class FloatManager(FloatUtils, MonitorCalculator):
         # for d, t in in zip(display, self.current_display):
             # if
 
+def debugger():
+    print("Entering debug mode. Evaluating input:")
+    while 1:
+        cmd = input('>>> ')
+        print(eval(cmd))
+
 if __name__ == "__main__":
     if "debug" in sys.argv:
-        print("Entering debug mode. Evaluating input:")
-        while 1:
-            cmd = input('>>> ')
-            print(eval(cmd))
+        debugger()
         exit(0)
 
 
