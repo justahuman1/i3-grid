@@ -41,10 +41,9 @@ class Utils:
         if command == 'resize':
             # 1189, 652 is a standard i3 window size for floating nodes
             # Data should be a len(Vector) == 2 (width, height)
-            return f"{msg} resize set {data.width} {data.height}"
+            return i3.resize('set', data.width, data.height)
         if command == 'move':
-            return f"{msg} move window position " \
-                   f"{data[0]} {data[1]}"
+            return i3.move('window', 'position', data.width, data.height)
 
     @staticmethod
     def get_cmd_args(elem=None):
