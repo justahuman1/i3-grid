@@ -52,7 +52,7 @@ class Utils:
 
 
     @staticmethod
-    def get_cmd_args(elem=None):
+    def get_cmd_args(elem: int=None) -> (Location, int):
         try:
             if elem:
                 if elem > len(sys.argv[1:]):
@@ -71,9 +71,9 @@ class Utils:
             '~/.config/i3float/floatrc'
             '~/.config/floatrc',
             '~/.floatrc',
-                os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                RC_FILE_NAME)
+            os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            RC_FILE_NAME)
         ]
         target_loc = None
         for loc in default_locs:
@@ -132,7 +132,10 @@ class MonitorCalculator:
         center_x = display_offset.width - target_offset.width
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
-        center_y = display_offset.height
+        center_y = display_offset.height - target_offset.height
+        print('dis_off:', display_offset)
+        print('tar_off:', target_offset)
+        print('center:', Location(center_x, center_y))
 
         return Location(center_x, center_y)
 
@@ -149,7 +152,7 @@ class FloatManager(FloatUtils, MonitorCalculator):
     def __init__(self, rows=2, cols=2, target=0):
         super().__init__()
         if target == 0:
-            self.make_float()
+            # self.make_float()
             self.move_to_center()
         self.rows = rows
         self.cols = cols
@@ -159,23 +162,25 @@ class FloatManager(FloatUtils, MonitorCalculator):
         workspace_num = self.get_wk_number()
         # Get the focused node
         self.assign_focus_node()
-        # print(self.focused_node)
+        print(self.focused_node)
 
         # we call the focused node the target
         target_pos = Location(width=self.focused_node['rect']['width'],
                  height=self.focused_node['rect']['height'])
-        print('target:', target_pos)
+        # print('target:', target_pos)
 
         # True center (accounting for multiple displays)
+        # The height vector is difficult to calculate due to XRandr
+        # offsets (that can extend in any direction).
         true_center = self.get_offset(window=self.area_matrix[workspace_num],
                                       target=target_pos)
-        print('true:', true_center)
-        print('matrix', self.area_matrix)
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
+        # Apply screen offset (XRandr)
 
         # Dispatch final command
-        Utils.dispatch_i3msg_com(command="move", data=true_center)
+        if input("Run? >> ") == 'y':
+            Utils.dispatch_i3msg_com(command="move", data=true_center)
 
     def make_float(self):
         Utils.dispatch_i3msg_com(command='float')
