@@ -1,6 +1,7 @@
 import i3, subprocess
-from typing import List
+from typing import List, Dict
 import sys
+from collections import namedtuple
 
 DISPLAY_MONITORS = {
     "eDP1",
@@ -8,7 +9,9 @@ DISPLAY_MONITORS = {
     "VGA",
 }
 # Custom Types
-Tensor = List[int]
+Location = namedtuple('Location', 'width height')
+Tensor = List[Location]
+WindowArray = Dict[int, Location]
 
 class Utils:
     def __init__(self, ):
@@ -50,20 +53,27 @@ class FloatUtils:
     def __init__(self):
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
-        self.current_display = self.current_display[0]
+        # self.current_display = self.current_display
 
-    def _calc_metadata(self):
+    def _calc_metadata(self) -> (WindowArray, dict):
         self.displays = i3.get_outputs()
 
         # Widths * Lengths (seperated to retain composition for children)
-        total_size = [[], []]
+        total_size = {}
+        monitor_cnt = 0
         for display in self.displays:
             if display['name'] not in DISPLAY_MONITORS:
                 continue
-            total_size[0] += [display['rect']['width']]
-            total_size[1] += [display['rect']['height']]
-        active = [i for i in i3.get_workspaces() if i['focused']]
-        # print(active)
+            # print(display)
+            display_screen_location = Location(
+                    width=display['rect']['width'],
+                    height=display['rect']['height'])
+            total_size[monitor_cnt] = display_screen_location
+            monitor_cnt += 1
+
+            # total_size[0] += [display['rect']['width']]
+            # total_size[1] += [display['rect']['height']]
+        active = [i for i in i3.get_workspaces() if i['focused']][0]
         return total_size, active
 
     def get_i3_socket(self):
@@ -74,16 +84,19 @@ class MonitorCalculator:
     def __init__(self, ):
         super().__init__()
 
-    def get_offset(self, window_tensor, monitor_tensor):
+    def get_offset(self, window: Location, target: Location):
         # 1) Calculate monitor center
         # 2) Calculate window offset
         # 3) Monitor center - offset = true center
         pass
 
 
-    def get_screen_center(self, width:int, height:int) -> Tensor:
-        return [int(width/2), int(height/2)]
+    def get_screen_center(self, width:int, height:int) -> Location:
+        return Location(int(width/2), int(height/2))
 
+class Movements:
+    def __init__(self, ):
+        super().__init__()
 
 class FloatManager(FloatUtils, MonitorCalculator):
     def __init__(self, rows=2, cols=2, target=0):
@@ -95,17 +108,18 @@ class FloatManager(FloatUtils, MonitorCalculator):
         self.target = target
 
     def move_to_center(self):
-        # workspace_num = self.get_wk_number()
-        # x_positioning = 0
-        # for i  in range(len(self.displays)):
-        #     if (self.displays[i]['name'] in DISPLAY_MONITORS) and (i < workspace_num):
-        #         x_positioning += self.area_matrix[0][i]
-        # x_positioning += self.get_screen_center(
-        #         self.current_display['rect']['width'],
-        #         self.current_display['rect']['height'])[0]
+        workspace_num = self.get_wk_number()
+        # Get the focused node
         self.get_current_window()
 
-        # print(workspace_num)
+        # we call the focused node the target
+        target_pos = Location(width=self.focused_node['rect']['width'],
+                 height=self.focused_node['rect']['height'])
+
+        self.get_offset(window=self.area_matrix[workspace_num],
+                        target=target_pos)
+        print(workspace_num)
+        print(self.area_matrix[workspace_num])
         # print(x_positioning)
 
     def make_float(self):
@@ -124,8 +138,6 @@ class FloatManager(FloatUtils, MonitorCalculator):
         for w in wkspc:
             # print(type(w))
             self.find_focused_window(w)
-        print(self.iter)
-        print(self.focused_node)
         # cmd = Utils.make_i3msg_command(command="resize")
         # Utils.dipatch_bash_command(command_str=cmd)
 
