@@ -36,6 +36,9 @@ class UtilsTest(Unit):
         args = '2 2'  # test a 4x4 floating grid
         Unit().execute_bash(f"python floatwm.py {args}")
 
+    def yaml_load_test(self):
+        floatwm.Utils.read_config()
+
 
 def metadata_test():
     util = floatwm.FloatUtils()
@@ -46,3 +49,4 @@ def metadata_test():
 # center_test()
 # cmd_line_test()
 ManagerTest().center_test()
+# UtilsTest().yaml_load_test()

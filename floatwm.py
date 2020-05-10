@@ -1,14 +1,12 @@
-import i3, subprocess
-from typing import List, Dict
-import sys, os
+import os
+import subprocess
+import sys
 from collections import namedtuple
+from typing import Dict, List
 
-RC_FILE_NAME = '.floatrc'
-DISPLAY_MONITORS = {
-    "eDP1",
-    "HDMI1",
-    "VGA",
-}
+import i3
+import yaml
+
 # Custom Types
 # The x and y coordinates of any X11 object
 Location = namedtuple('Location', 'width height')
@@ -16,6 +14,16 @@ Location = namedtuple('Location', 'width height')
 Tensor = List[Location]
 # Represents the display monitor to their respective index
 DisplayMap = Dict[int, Location]
+
+# Globals used for config
+AUTO_FLOAT_CONVERT = False
+RC_FILE_NAME = 'floatrc'
+DEFAUlT_GRID = {'rows': 2,'cols':2 }
+DISPLAY_MONITORS = {
+    "eDP1",
+    "HDMI1",
+    "VGA",
+}
 
 # TODO: replace global variables with rc file
 # TODO: handle multiple monitor (behind summation) offset
@@ -67,13 +75,16 @@ class Utils:
 
     @staticmethod
     def read_config():
+        global DISPLAY_MONITORS, RC_FILE_NAME
+        global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
+
         default_locs = [
-            '~/.config/i3float/floatrc'
-            '~/.config/floatrc',
-            '~/.floatrc',
+            f'~/.config/i3float/{RC_FILE_NAME}'
+            f'~/.config/{RC_FILE_NAME}',
+            f'~/.{RC_FILE_NAME}',
             os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            RC_FILE_NAME)
+            f'.{RC_FILE_NAME}')
         ]
         target_loc = None
         for loc in default_locs:
@@ -86,12 +97,33 @@ class Utils:
                              "Add to ~/.floatrc or ~/.config/floatrc " \
                              "or ~/.config/i3float/floatrc")
 
+        with open(target_loc, 'r') as f:
+            config = yaml.safe_load(f)
+        if not config or 'Settings' not in config:
+            raise ValueError("Incorrect floatrc file sytax. Please follow yaml guidelines and example.")
+
+        monitors_yml_key = 'DisplayMonitors'
+        grid_yml_key = 'DefaultGrid'
+        auto_yml_key = 'AutoConvertToFloat'
+        grid_yml_syn = ['Rows', 'Columns']
+        settings = config['Settings']
+
+        if monitors_yml_key in settings:
+            DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
+        if grid_yml_key in settings:
+            DEFAUlT_GRID = {
+                    'rows': settings[grid_yml_key][grid_yml_syn[0]],
+                    'cols': settings[grid_yml_key][grid_yml_syn[1]],
+            }
+        if auto_yml_key in settings:
+            AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
+
+
 
 class FloatUtils:
     def __init__(self):
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
-        # self.current_display = self.current_display
 
     def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = i3.get_outputs()
@@ -102,15 +134,12 @@ class FloatUtils:
         for display in self.displays:
             if display['name'] not in DISPLAY_MONITORS:
                 continue
-            # print(display)
             display_screen_location = Location(
                     width=display['rect']['width'],
                     height=display['rect']['height'])
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
 
-            # total_size[0] += [display['rect']['width']]
-            # total_size[1] += [display['rect']['height']]
         active = [i for i in i3.get_workspaces() if i['focused']][0]
         return total_size, active
 
@@ -139,6 +168,9 @@ class MonitorCalculator:
 
         return Location(center_x, center_y)
 
+    def calculate_grid(self, rows, cols):
+        pass
+
 
     def get_screen_center(self, *windows: Location) -> Location:
         return [Location(int(window.width/2), int(window.height/2))
@@ -151,8 +183,12 @@ class Movements:
 class FloatManager(FloatUtils, MonitorCalculator):
     def __init__(self, rows=2, cols=2, target=0):
         super().__init__()
+        # 1) Read config and merge globals
+        Utils.read_config()
         if target == 0:
-            # self.make_float()
+            if AUTO_FLOAT_CONVERT:
+                print("Floating!")
+                self.make_float()
             self.move_to_center()
         self.rows = rows
         self.cols = cols
@@ -162,7 +198,8 @@ class FloatManager(FloatUtils, MonitorCalculator):
         workspace_num = self.get_wk_number()
         # Get the focused node
         self.assign_focus_node()
-        print(self.focused_node)
+        # print(self.focused_node)
+        exit()
 
         # we call the focused node the target
         target_pos = Location(width=self.focused_node['rect']['width'],
@@ -246,5 +283,3 @@ if __name__ == "__main__":
     if "debug" in sys.argv:
         debugger()
         exit(0)
-
-
