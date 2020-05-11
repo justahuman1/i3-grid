@@ -23,6 +23,7 @@ class CustomFormatter(HelpFormatter):
             else:
                 return ',\n  '.join(parts)
 
+
 class NoAction(Action):
     def __init__(self, **kwargs):
         kwargs.setdefault('default', SUPPRESS)
@@ -34,13 +35,15 @@ class NoAction(Action):
                  option_string=None):
         pass
 
+
 class Documentation:
     def __init__(self, ):
         super().__init__()
         self.actions = {
-            'center': "center the focused window to a float window",
-            'float': "toggle the float of a window (overrides config file for otf movements)",
-            'resize': "resize focused window (if float)",
+            'center': "Center the focused window to a float window",
+            'float': "Toggle the float of a window (overrides config file for otf movements)",
+            'resize': "Resize focused window (if float)",
+            'snap': "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target.",
         }
 
     def build_parser(self,choices: list) -> ArgumentParser:
