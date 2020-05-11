@@ -1,4 +1,5 @@
 import os
+import argparse
 import subprocess
 import sys
 from collections import namedtuple
@@ -17,6 +18,7 @@ DisplayMap = Dict[int, Location]
 
 # Globals used for config
 AUTO_FLOAT_CONVERT = False
+SNAP_LOCATION = 0
 RC_FILE_NAME = 'floatrc'
 DEFAUlT_GRID = {'rows': 2,'cols':2 }
 DISPLAY_MONITORS = {
@@ -77,6 +79,7 @@ class Utils:
     def read_config():
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
+        global SNAP_LOCATION
 
         default_locs = [
             f'~/.config/i3float/{RC_FILE_NAME}'
@@ -105,6 +108,7 @@ class Utils:
         monitors_yml_key = 'DisplayMonitors'
         grid_yml_key = 'DefaultGrid'
         auto_yml_key = 'AutoConvertToFloat'
+        snap_yml_key = 'SnapLocation'
         grid_yml_syn = ['Rows', 'Columns']
         settings = config['Settings']
 
@@ -118,6 +122,18 @@ class Utils:
         if auto_yml_key in settings:
             AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
 
+        if snap_yml_key in settings:
+            if isinstance(settings[snap_yml_key], int):
+                SNAP_LOCATION = settings[snap_yml_key]
+            else:
+                raise ValueError("Unexpected Snap location data type (expected int)")
+
+    @staticmethod
+    def on_the_fly_override(**kwargs):
+        global DISPLAY_MONITORS, RC_FILE_NAME
+        global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
+        global SNAP_LOCATION
+        pass
 
 
 class FloatUtils:
@@ -227,7 +243,7 @@ class Movements(MonitorCalculator):
     def __init__(self, ):
         super().__init__()
 
-    def move_to_center(self):
+    def move_to_center(self, *args):
         workspace_num = self.get_wk_number()
         # Get the focused node
         self.assign_focus_node()
@@ -251,7 +267,7 @@ class Movements(MonitorCalculator):
         # if input("Run? >> ") == 'y':
         Utils.dispatch_i3msg_com(command="move", data=true_center)
 
-    def move_to_grid(self):
+    def move_to_grid(self, *args):
         pass
         # self.
 
@@ -276,21 +292,26 @@ class FloatManager(Movements):
             "snap":self.move_to_grid,
         }
 
-    def run_command(self, cmd):
+    def run_command(self, cmd, *args):
         if cmd not in self.commands:
             raise KeyError("No corresponding run command to input:", cmd)
 
-        self.commands[cmd]()
+        self.commands[cmd](*args)
 
 
 def help_menu():
-    dv = '='*14
-    sdv = '-'*14
-    print(f"""\n   Help Menu:\n {dv}\n  Run
-    python floatwm.py <actions> - Actions occur in order of args\n  {sdv}\n  Actions
-    float:  toggle the float of a window (overrides config file for otf movements)
-    center: center the focused window to a float window
-    resize: resize focused window (if float)\n  {sdv}\n  Config\n """)
+    print()
+    parser = argparse.ArgumentParser(description='Manage your floating windows with ease.')
+    parser.add_argument('actions', metavar='<action>', type=str, nargs='+',
+                        help='The action to perform to current focused window')
+    parser.add_argument('--rows', type=int,
+            help='The number of row slices in screen grid (default in rc file)')
+    parser.add_argument('--cols', type=int,
+            help='The number of col slices in screen grid (default in rc file)')
+    parser.add_argument('--target', type=int,
+            help='The grid location to snap the window to (default: 0)')
+    return parser
+
 
 
 def debugger():
@@ -303,4 +324,8 @@ if __name__ == "__main__":
     if "debug" in sys.argv:
         debugger()
         exit(0)
-    help_menu()
+
+    parser = help_menu()
+    args = parser.parse_args()
+    print(args)
+

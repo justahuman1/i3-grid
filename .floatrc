@@ -25,4 +25,15 @@ Settings:
     # boolean: true/false
     AutoConvertToFloat: false
 
+    # Default location to snap window to (if not given on the fly)
+    # The grid is read from top to bottom and left to right.
+    # 0 is center of the whole screen (no resizing)
+    # Default example:
+    #  1  |  2  |  3
+    #  --------------
+    #  4  |  5  |  6
+    #  --------------
+    #  7  |  8  |  9
+    SnapLocation: 0
+
 
