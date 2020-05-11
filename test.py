@@ -21,7 +21,14 @@ class ManagerTest(Unit):
         super().__init__()
 
     def center_test(self, ):
-        man = floatwm.FloatManager()
+       (floatwm
+        .FloatManager()
+        .run_command('center'))
+
+    def grid_test(self, target):
+        (floatwm
+         .FloatManager(target=target)
+         .run_command('snap'))
 
 
 # Utils Unit test
@@ -39,6 +46,9 @@ class UtilsTest(Unit):
     def yaml_load_test(self):
         floatwm.Utils.read_config()
 
+def help_test():
+    print(floatwm.Utils.dipatch_bash_command('python floatwm.py'))
+
 
 def metadata_test():
     util = floatwm.FloatUtils()
@@ -48,5 +58,6 @@ def metadata_test():
 
 # center_test()
 # cmd_line_test()
-ManagerTest().center_test()
+# ManagerTest().center_test()
+help_test()
 # UtilsTest().yaml_load_test()

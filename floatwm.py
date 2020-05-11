@@ -125,104 +125,6 @@ class FloatUtils:
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
 
-    def _calc_metadata(self) -> (DisplayMap, dict):
-        self.displays = i3.get_outputs()
-
-        # Widths * Lengths (seperated to retain composition for children)
-        total_size = {}
-        monitor_cnt = 0
-        for display in self.displays:
-            if display['name'] not in DISPLAY_MONITORS:
-                continue
-            display_screen_location = Location(
-                    width=display['rect']['width'],
-                    height=display['rect']['height'])
-            total_size[monitor_cnt] = display_screen_location
-            monitor_cnt += 1
-
-        active = [i for i in i3.get_workspaces() if i['focused']][0]
-        return total_size, active
-
-    def get_i3_socket(self):
-        socket = i3.Socket()
-
-
-class MonitorCalculator:
-    def __init__(self, ):
-        super().__init__()
-
-    def get_offset(self, window: Location, target: Location) -> Location:
-        # 1) Calculate monitor center
-        # 2) Calculate window offset
-        # 3) Monitor center - offset = true center
-        # 3 if) tensors are intersecting
-        display_offset, target_offset = self.get_screen_center(
-                window, target)
-        center_x = display_offset.width - target_offset.width
-        # Heigh is half of the respective monitor
-        # The tensors are parallel hence, no summation.
-        center_y = display_offset.height - target_offset.height
-        print('dis_off:', display_offset)
-        print('tar_off:', target_offset)
-        print('center:', Location(center_x, center_y))
-
-        return Location(center_x, center_y)
-
-    def calculate_grid(self, rows, cols):
-        pass
-
-
-    def get_screen_center(self, *windows: Location) -> Location:
-        return [Location(int(window.width/2), int(window.height/2))
-                for window in windows]
-
-class Movements:
-    def __init__(self, ):
-        super().__init__()
-
-class FloatManager(FloatUtils, MonitorCalculator):
-    def __init__(self, rows=2, cols=2, target=0):
-        super().__init__()
-        # 1) Read config and merge globals
-        Utils.read_config()
-        if target == 0:
-            if AUTO_FLOAT_CONVERT:
-                print("Floating!")
-                self.make_float()
-            self.move_to_center()
-        self.rows = rows
-        self.cols = cols
-        self.target = target
-
-    def move_to_center(self):
-        workspace_num = self.get_wk_number()
-        # Get the focused node
-        self.assign_focus_node()
-        # print(self.focused_node)
-        exit()
-
-        # we call the focused node the target
-        target_pos = Location(width=self.focused_node['rect']['width'],
-                 height=self.focused_node['rect']['height'])
-        # print('target:', target_pos)
-
-        # True center (accounting for multiple displays)
-        # The height vector is difficult to calculate due to XRandr
-        # offsets (that can extend in any direction).
-        true_center = self.get_offset(window=self.area_matrix[workspace_num],
-                                      target=target_pos)
-        # TODO
-        # Apply offset (user preference (due to polybar, etc.))
-        # Apply screen offset (XRandr)
-
-        # Dispatch final command
-        if input("Run? >> ") == 'y':
-            Utils.dispatch_i3msg_com(command="move", data=true_center)
-
-    def make_float(self):
-        Utils.dispatch_i3msg_com(command='float')
-        pass
-
     def assign_focus_node(self):
         tree = i3.get_tree()
         # for node in tree:
@@ -247,6 +149,28 @@ class FloatManager(FloatUtils, MonitorCalculator):
             for root in target_nodes: self.find_focused_window(root)
         else: return
 
+
+    def _calc_win_resize(self):
+        pass
+
+    def _calc_metadata(self) -> (DisplayMap, dict):
+        self.displays = i3.get_outputs()
+
+        # Widths * Lengths (seperated to retain composition for children)
+        total_size = {}
+        monitor_cnt = 0
+        for display in self.displays:
+            if display['name'] not in DISPLAY_MONITORS:
+                continue
+            display_screen_location = Location(
+                    width=display['rect']['width'],
+                    height=display['rect']['height'])
+            total_size[monitor_cnt] = display_screen_location
+            monitor_cnt += 1
+
+        active = [i for i in i3.get_workspaces() if i['focused']][0]
+        return total_size, active
+
     def get_wk_number(self):
         c_monitor = 0
         for display in self.displays:
@@ -270,8 +194,104 @@ class FloatManager(FloatUtils, MonitorCalculator):
                 return False
         return True
 
-        # for d, t in in zip(display, self.current_display):
-            # if
+    def get_i3_socket(self):
+        socket = i3.Socket()
+
+
+class MonitorCalculator(FloatUtils):
+    def __init__(self, ):
+        super().__init__()
+
+    def get_offset(self, window: Location, target: Location) -> Location:
+        # 1) Calculate monitor center
+        # 2) Calculate window offset
+        # 3) Monitor center - offset = true center
+        # 3 if) tensors are intersecting
+        display_offset, target_offset = self.get_screen_center(
+                window, target)
+        # Heigh is half of the respective monitor
+        # The tensors are parallel hence, no summation.
+        center_x = display_offset.width - target_offset.width
+        center_y = display_offset.height - target_offset.height
+        return Location(center_x, center_y)
+
+    def calculate_grid(self, rows, cols):
+        pass
+
+
+    def get_screen_center(self, *windows: Location) -> Location:
+        return [Location(int(window.width/2), int(window.height/2))
+                for window in windows]
+
+class Movements(MonitorCalculator):
+    def __init__(self, ):
+        super().__init__()
+
+    def move_to_center(self):
+        workspace_num = self.get_wk_number()
+        # Get the focused node
+        self.assign_focus_node()
+        # print(self.focused_node)
+
+        # we call the focused node the target
+        target_pos = Location(width=self.focused_node['rect']['width'],
+                 height=self.focused_node['rect']['height'])
+        # print('target:', target_pos)
+
+        # True center (accounting for multiple displays)
+        # The height vector is difficult to calculate due to XRandr
+        # offsets (that can extend in any direction).
+        true_center = self.get_offset(window=self.area_matrix[workspace_num],
+                                      target=target_pos)
+        # TODO
+        # Apply offset (user preference (due to polybar, etc.))
+        # Apply screen offset (XRandr)
+
+        # Dispatch final command
+        # if input("Run? >> ") == 'y':
+        Utils.dispatch_i3msg_com(command="move", data=true_center)
+
+    def move_to_grid(self):
+        pass
+        # self.
+
+    def make_float(self):
+        Utils.dispatch_i3msg_com(command='float')
+
+
+class FloatManager(Movements):
+    # Manager > Movement > Calculator > Utility > Dispatch event
+    def __init__(self, target=0):
+        super().__init__()
+        # 1) Read config and merge globals
+        Utils.read_config()
+        # If not float, make float -> <movement>
+        if AUTO_FLOAT_CONVERT:
+            self.make_float()
+        self.rows = DEFAUlT_GRID['rows']
+        self.cols = DEFAUlT_GRID['cols']
+        self.target = target
+        self.commands = {
+            "center":self.move_to_center,
+            "snap":self.move_to_grid,
+        }
+
+    def run_command(self, cmd):
+        if cmd not in self.commands:
+            raise KeyError("No corresponding run command to input:", cmd)
+
+        self.commands[cmd]()
+
+
+def help_menu():
+    dv = '='*14
+    sdv = '-'*14
+    print(f"""\n   Help Menu:\n {dv}\n  Run
+    python floatwm.py <actions> - Actions occur in order of args\n  {sdv}\n  Actions
+    float:  toggle the float of a window (overrides config file for otf movements)
+    center: center the focused window to a float window
+    resize: resize focused window (if float)\n  {sdv}\n  Config\n """)
+
 
 def debugger():
     print("Entering debug mode. Evaluating input:")
@@ -283,3 +303,4 @@ if __name__ == "__main__":
     if "debug" in sys.argv:
         debugger()
         exit(0)
+    help_menu()
