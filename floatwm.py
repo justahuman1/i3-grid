@@ -266,10 +266,6 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
-        workspace_num = self.get_wk_number()
-        # Get the focused node
-        self.assign_focus_node()
-
         # we call the focused node the target
         target_pos = Location(width=self.focused_node['rect']['width'],
                               height=self.focused_node['rect']['height'])
@@ -278,7 +274,7 @@ class Movements(MonitorCalculator):
         # True center (accounting for multiple displays)
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
-        true_center = self.get_offset(window=self.area_matrix[workspace_num],
+        true_center = self.get_offset(window=self.area_matrix[self.workspace_num],
                                       target=target_pos)
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
@@ -295,19 +291,20 @@ class Movements(MonitorCalculator):
         the target (default: 0) position in
         current grid (default: 2*2)"""
         # global DEFAUlT_GRID, SNAP_LOCATION
-
         print(DEFAUlT_GRID, SNAP_LOCATION)
-        pass
+        print("====")
+        print(self.area_matrix)
+        print(self.focused_node)
 
     def make_float(self, **kwargs) -> None:
         """Moves the current window into float mode
-        if it is not float. If float, do nothing."""
+        if it is not float. If float, do nothing. Does not
+        resize (feel free to combine) but i3 does so by default
+        sometimes (based on config and instance rules)."""
         Utils.dispatch_i3msg_com(command='float')
 
 
 class FloatManager(Movements):
-
-
     def __init__(self, **kwargs):
         """Manager > Movement > Calculator > Utility > Dispatch event"""
         super().__init__()
@@ -316,6 +313,10 @@ class FloatManager(Movements):
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
         # If not float, make float -> <movement>
+        self.workspace_num = self.get_wk_number()
+        # Set the focused node
+        self.assign_focus_node()
+
         if AUTO_FLOAT_CONVERT:
             self.make_float()
         executors = [
