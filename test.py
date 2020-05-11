@@ -34,7 +34,6 @@ class ManagerTest(Unit):
 # Utils Unit test
 
 
-
 class UtilsTest(Unit):
     def __init__(self, ):
         super().__init__()

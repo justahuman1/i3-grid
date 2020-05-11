@@ -47,7 +47,7 @@ class Utils:
         return out.stdout
 
     @staticmethod
-    def dispatch_i3msg_com(command: str, data: Location = Location(1189, 652)):
+    def dispatch_i3msg_com(command: str, data: Location = Location(1189, 652)) -> list:
         # Immutable location tuple accounts for mutation error
         if not isinstance(data, (list, tuple)) and len(data) == 2:
             raise ValueError("Incorrect data type/length for i3 command")
@@ -78,7 +78,7 @@ class Utils:
             return [4, 4]
 
     @staticmethod
-    def read_config():
+    def read_config() -> None:
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
         global SNAP_LOCATION
@@ -133,7 +133,7 @@ class Utils:
                     "Unexpected Snap location data type (expected int)")
 
     @staticmethod
-    def on_the_fly_override(**kwargs):
+    def on_the_fly_override(**kwargs) -> None:
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
         global SNAP_LOCATION
@@ -154,7 +154,7 @@ class FloatUtils:
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
 
-    def assign_focus_node(self):
+    def assign_focus_node(self) -> None:
         tree = i3.get_tree()
         # for node in tree:
         wkspc = [node for node in tree['nodes']
@@ -165,7 +165,7 @@ class FloatUtils:
         for w in wkspc:
             self.find_focused_window(w)
 
-    def find_focused_window(self, node: dict):
+    def find_focused_window(self, node: dict) -> None:
         """Sets the focused_node attribute"""
         # DFS to find the current window
         self.iter += 1
@@ -262,7 +262,10 @@ class Movements(MonitorCalculator):
     def __init__(self, ):
         super().__init__()
 
-    def move_to_center(self, **kwargs):
+    def move_to_center(self, **kwargs) -> None:
+        """Moves the focused window to
+        the absolute window center (corresponds to
+        target=0)"""
         workspace_num = self.get_wk_number()
         # Get the focused node
         self.assign_focus_node()
@@ -288,27 +291,29 @@ class Movements(MonitorCalculator):
         print("Resizing...")
 
     def snap_to_grid(self, **kwargs):
+        """Moves the focused window to
+        the target (default: 0) position in
+        current grid (default: 2*2)"""
         # global DEFAUlT_GRID, SNAP_LOCATION
 
         print(DEFAUlT_GRID, SNAP_LOCATION)
         pass
 
-    def make_float(self, **kwargs):
-        print('floating')
+    def make_float(self, **kwargs) -> None:
+        """Moves the current window into float mode
+        if it is not float. If float, do nothing."""
         Utils.dispatch_i3msg_com(command='float')
 
 
 class FloatManager(Movements):
-    # available_commands = ['center', 'snap', 'float','resize']
-    # Manager > Movement > Calculator > Utility > Dispatch event
+
 
     def __init__(self, **kwargs):
+        """Manager > Movement > Calculator > Utility > Dispatch event"""
         super().__init__()
         # 1) Read config and merge globals
         Utils.read_config()
-        # 2) Override on the fly settings
-        print('fir')
-        print(kwargs)
+        # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
         # If not float, make float -> <movement>
         if AUTO_FLOAT_CONVERT:
@@ -319,7 +324,6 @@ class FloatManager(Movements):
             self.make_resize,
             self.snap_to_grid,
         ]
-        # print(kwargs)
         self.com_map = {
             c: e for c, e in zip(
                 kwargs['commands'],
