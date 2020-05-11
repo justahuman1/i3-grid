@@ -9,13 +9,11 @@ class CustomFormatter(HelpFormatter):
             return metavar
         else:
             parts = []
-            # if the Optional doesn't take a value, format is:
-            #    -s, --long
             if action.nargs == 0:
+                # if the Optional doesn't take a value, format the value
                 parts.extend(action.option_strings)
-            # if the Optional takes a value, format is:
-            #    -s ARGS, --long ARGS
             else:
+                # if the Optional takes a value, format as is
                 default = action.dest.upper()
                 args_string = self._format_args(action, default)
                 for option_string in action.option_strings:
@@ -31,7 +29,9 @@ class NoAction(Action):
         kwargs.setdefault('nargs', 0)
         super(NoAction, self).__init__(**kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser,
+                 namespace, values,
+                 option_string=None):
         pass
 
 class Documentation:
@@ -69,13 +69,6 @@ class Documentation:
                   This will try to center the window to grid position 3 but fails, as it is not floating. The proper order would be:
                   "python floatwm.py float center --target 3"
                   A minimum of one action is required to run the script."""
-
-        # for ac,de in self.actions.items():
-        #     action_parser.add_argument('help', metavar="")
-        #     action_parser.add_argument(
-        #         f'--{ac}',
-        #         type=str,
-        #         help=de)
 
     def action_choices(self) -> str:
         help_str = "Actions:\n"
