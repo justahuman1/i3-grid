@@ -8,6 +8,8 @@ from typing import Dict, List
 import i3
 import yaml
 
+from doc import Documentation
+
 # Custom Types
 # The x and y coordinates of any X11 object
 Location = namedtuple('Location', 'width height')
@@ -58,7 +60,7 @@ class Utils:
             print(f'w: {w}, h: {h}"')
             return i3.move('window', 'position', w, h)
         if command == 'float':
-            return i3.floating('toggle')
+            return i3.floating('enable')
 
 
     @staticmethod
@@ -133,6 +135,7 @@ class Utils:
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
         global SNAP_LOCATION
+        # if 'row' in kwargs:
         pass
 
 
@@ -269,48 +272,40 @@ class Movements(MonitorCalculator):
 
     def move_to_grid(self, *args):
         pass
-        # self.
 
     def make_float(self):
         Utils.dispatch_i3msg_com(command='float')
 
 
 class FloatManager(Movements):
+    available_commands = ['center', 'snap', 'float']
     # Manager > Movement > Calculator > Utility > Dispatch event
-    def __init__(self, target=0):
+    def __init__(self, **kwargs):
         super().__init__()
         # 1) Read config and merge globals
         Utils.read_config()
+        # 2) Override on the fly settings
+        Utils.on_the_fly_override(**kwargs)
         # If not float, make float -> <movement>
         if AUTO_FLOAT_CONVERT:
             self.make_float()
-        self.rows = DEFAUlT_GRID['rows']
-        self.cols = DEFAUlT_GRID['cols']
-        self.target = target
+        executors = [
+            self.move_to_center,
+            self.move_to_grid,
+            self.make_float,
+        ]
         self.commands = {
-            "center":self.move_to_center,
-            "snap":self.move_to_grid,
-        }
+            c:e for c,e in zip(
+            FloatManager.available_commands,
+            executors)}
 
     def run_command(self, cmd, *args):
         if cmd not in self.commands:
             raise KeyError("No corresponding run command to input:", cmd)
+        print(cmd)
+        print(self.commands)
 
-        self.commands[cmd](*args)
-
-
-def help_menu():
-    print()
-    parser = argparse.ArgumentParser(description='Manage your floating windows with ease.')
-    parser.add_argument('actions', metavar='<action>', type=str, nargs='+',
-                        help='The action to perform to current focused window')
-    parser.add_argument('--rows', type=int,
-            help='The number of row slices in screen grid (default in rc file)')
-    parser.add_argument('--cols', type=int,
-            help='The number of col slices in screen grid (default in rc file)')
-    parser.add_argument('--target', type=int,
-            help='The grid location to snap the window to (default: 0)')
-    return parser
+        # self.commands[cmd](*args)
 
 
 
@@ -325,7 +320,11 @@ if __name__ == "__main__":
         debugger()
         exit(0)
 
-    parser = help_menu()
+    doc = Documentation()
+    parser = doc.build_parser(choices=FloatManager.available_commands)
     args = parser.parse_args()
-    print(args)
+
+    for action in args.actions:
+        FloatManager().run_command(cmd=action)
+
 
