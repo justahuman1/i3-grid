@@ -1,12 +1,8 @@
-from argparse import ArgumentParser, RawTextHelpFormatter, HelpFormatter, Action, SUPPRESS
+from argparse import (SUPPRESS, Action, ArgumentParser, HelpFormatter,
+                      RawTextHelpFormatter)
 
 
 class CustomFormatter(HelpFormatter):
-    """Custom formatter for setting argparse formatter_class. Identical to the
-    default formatter, except that very long option strings are split into two
-    lines.
-    """
-
     def _format_action_invocation(self, action):
         if not action.option_strings:
             metavar, = self._metavar_formatter(action, action.dest)(1)
@@ -87,6 +83,3 @@ class Documentation:
             help_str += f'{action}\t{desc}\n'
 
         return help_str
-
-
-

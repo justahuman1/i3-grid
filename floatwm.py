@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 import subprocess
 import sys
 from collections import namedtuple
@@ -22,14 +22,13 @@ DisplayMap = Dict[int, Location]
 AUTO_FLOAT_CONVERT = False
 SNAP_LOCATION = 0
 RC_FILE_NAME = 'floatrc'
-DEFAUlT_GRID = {'rows': 2,'cols':2 }
+DEFAUlT_GRID = {'rows': 2, 'cols':2}
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
     "VGA",
 }
 
-# TODO: replace global variables with rc file
 # TODO: handle multiple monitor (behind summation) offset
 # TODO: add grid options
 
@@ -308,7 +307,6 @@ class FloatManager(Movements):
         # self.commands[cmd](*args)
 
 
-
 def debugger():
     print("Entering debug mode. Evaluating input:")
     while 1:
@@ -326,5 +324,3 @@ if __name__ == "__main__":
 
     for action in args.actions:
         FloatManager().run_command(cmd=action)
-
-
