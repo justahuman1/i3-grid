@@ -150,9 +150,9 @@ class Utils:
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
-        global DISPLAY_MONITORS, RC_FILE_NAME
-        global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
-        global SNAP_LOCATION
+        # global DISPLAY_MONITORS, RC_FILE_NAME
+        global SNAP_LOCATION, DEFAUlT_GRID
+        # global SNAP_LOCATION
         # TODO - Expose more global fly configs
         r = "rows"
         c = "cols"
@@ -167,19 +167,20 @@ class Utils:
 
 class CacheManager:
     # Initiate for class, not per instance
-    data_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}")
+    data_location = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}"
+    )
 
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
     def get(self, key):
         try:
-            cache = pickle.load(open('.cache.p', 'rb'))
+            cache = pickle.load(open(".cache.p", "rb"))
         except FileNotFoundError:
             return None
 
         return cache[key]
-
 
 
 class FloatUtils:
@@ -266,26 +267,47 @@ class MonitorCalculator(FloatUtils):
     def __init__(self,):
         super().__init__()
 
-    def get_offset(
-        self, window: Location, target: Location, rows, cols: int
-    ) -> Location:
+    def get_offset(self, center: bool = True) -> Location:
+        # No globals required (read only)
         # 1) Calculate monitor center
         # 2) Calculate window offset
         # 3) Monitor center - offset = true center
         # 3 if) tensors are intersecting
-        display_offset, target_offset = self.get_matrix_center(
-            rows, cols, window, target
-        )
+        display = self.area_matrix[self.workspace_num]
+        window = self.get_target(self.focused_node)
+        rows = DEFAUlT_GRID["rows"]
+        cols = DEFAUlT_GRID["cols"]
+        center = False
+        if center or SNAP_LOCATION == 0:
+            display_offset, target_offset = self.get_matrix_center(
+                rows, cols, display, window
+            )
+        else:
+            self.calculate_grid(rows, cols, display, window)
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
-        center_x = display_offset.width - target_offset.width
-        center_y = display_offset.height - target_offset.height
-        return Location(center_x, center_y)
+        # local *centers
+        # center_x = display_offset.width - target_offset.width
+        # center_y = display_offset.height - target_offset.height
+        # return Location(center_x, center_y)
 
-    def calculate_grid(self, rows, cols):
+    def calculate_grid(self, rows, cols, display, window):
         print(f"grid rows: {rows}")
         print(f"grid cols: {cols}")
-        pass
+        print(f"window: {window}")
+        print(f"display: {display}")
+        # per_quadrant_dim = Location(display.width / cols, display.height / rows)
+        # print('per quad:', per_quadrant_dim)
+        grid = [[0 for _ in range(cols)] for _ in range(rows)]
+        i = 1
+        for row in range(len(grid)):
+            for col in range(len(grid[row])):
+                grid[row][col] = i
+                i += 1
+
+        print(grid)
+
+
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
@@ -303,7 +325,7 @@ class Movements(MonitorCalculator):
         the absolute window center (corresponds to
         target=0)"""
         # we call the focused node the target
-        target_pos = self.get_target(self.focused_node)
+        # target_pos = self.get_target(self.focused_node)
         # Location(width=self.focused_node['rect']['width'],
         #                       height=self.focused_node['rect']['height'])
         # print('target:', target_pos)
@@ -312,10 +334,10 @@ class Movements(MonitorCalculator):
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
         true_center = self.get_offset(
-            window=self.area_matrix[self.workspace_num],
-            target=target_pos,
-            rows=2,
-            cols=2,
+            # window=self.area_matrix[self.workspace_num],
+            # target=target_pos,
+            # rows=2,
+            # cols=2,
         )
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
@@ -335,20 +357,21 @@ class Movements(MonitorCalculator):
         the target (default: 0) position in
         current grid (default: 2*2)"""
         # global DEFAUlT_GRID, SNAP_LOCATION
-        print(DEFAUlT_GRID, SNAP_LOCATION)
+        # print(DEFAUlT_GRID, SNAP_LOCATION)
         target_pos = self.get_target(self.focused_node)
-        print(target_pos)
-        print('target_pos')
+        # print(target_pos)
+        # print("target_pos")
         true_center = self.get_offset(
-            window=self.area_matrix[self.workspace_num],
-            target=target_pos,
-            rows=DEFAUlT_GRID["rows"],
-            cols=DEFAUlT_GRID["cols"],
+            # window=self.area_matrix[self.workspace_num],
+            # target=target_pos,
+            # rows=DEFAUlT_GRID["rows"],
+            # cols=DEFAUlT_GRID["cols"],
+            center=False,
         )
 
-        print("====")
-        print(true_center)
-        print("====")
+        # print("====")
+        # print(true_center)
+        # print("====")
         # print(self.area_matrix)
         # print(self.focused_node)
         # self.area_matrix
@@ -411,7 +434,7 @@ if __name__ == "__main__":
     for action in args.actions:
         manager = FloatManager(
             commands=comx, target=args.target, cols=args.cols, rows=args.rows
-    )
+        )
         manager.run_command(cmd=action)
 
     exit(1)
