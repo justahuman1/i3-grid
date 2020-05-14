@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import argparse
 import os
 import subprocess
@@ -10,9 +13,21 @@ import yaml
 
 from doc import Documentation
 
+""" i3_float_wm is a script to manage floating windows for the
+i3 tiling window manager. The code is split into several classes, which isolate
+the logic respective to its name. The process flow is as follows:
+
+    1) FloatManager: Manages the user input parsing and function dispatches.
+    2) Movements: Contains the functions that are directly called by the user to invoke window actions.
+    3) MonitorCalculator: Manages the xrandr display settings to make display agnostic window decisions.
+    4) FloatUtils: The meta functions of the manager that directly assist the movements and calculator.
+    5) Utils: Additional utilities to abstract debugging, RPC calls, etc.
+"""
+# Formatted with Black: https://github.com/psf/black
+
 # Custom Types
 # The x and y coordinates of any X11 object
-Location = namedtuple('Location', 'width height')
+Location = namedtuple("Location", "width height")
 # A vector of location objects
 Tensor = List[Location]
 # Represents the display monitor to their respective index
@@ -21,8 +36,8 @@ DisplayMap = Dict[int, Location]
 # Globals used for config
 AUTO_FLOAT_CONVERT = False
 SNAP_LOCATION = 0
-RC_FILE_NAME = 'floatrc'
-DEFAUlT_GRID = {'rows': 2, 'cols': 2}
+RC_FILE_NAME = "floatrc"
+DEFAUlT_GRID = {"rows": 2, "cols": 2}
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
@@ -34,13 +49,12 @@ DISPLAY_MONITORS = {
 
 
 class Utils:
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
     @staticmethod
     def dipatch_bash_command(command_str: str) -> str:
-        if (not command_str or
-                command_str.strip() == ""):
+        if not command_str or command_str.strip() == "":
             raise ValueError("null command")
 
         out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
@@ -51,17 +65,17 @@ class Utils:
         # Immutable location tuple accounts for mutation error
         if not isinstance(data, (list, tuple)) and len(data) == 2:
             raise ValueError("Incorrect data type/length for i3 command")
-        w = str(data.width) if data.width > 0 else '0'
-        h = str(data.height) if data.height > 0 else '0'
-        if command == 'resize':
+        w = str(data.width) if data.width > 0 else "0"
+        h = str(data.height) if data.height > 0 else "0"
+        if command == "resize":
             # 1189, 652 is a standard i3 window size for floating nodes
             # Data should be a len(Vector) == 2 (width, height)
-            return i3.resize('set', w, h)
-        if command == 'move':
+            return i3.resize("set", w, h)
+        if command == "move":
             print(f'w: {w}, h: {h}"')
-            return i3.move('window', 'position', w, h)
-        if command == 'float':
-            return i3.floating('enable')
+            return i3.move("window", "position", w, h)
+        if command == "float":
+            return i3.floating("enable")
 
     @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
@@ -84,12 +98,11 @@ class Utils:
         global SNAP_LOCATION
 
         default_locs = [
-            f'~/.config/i3float/{RC_FILE_NAME}'
-            f'~/.config/{RC_FILE_NAME}',
-            f'~/.{RC_FILE_NAME}',
+            f"~/.config/i3float/{RC_FILE_NAME}" f"~/.config/{RC_FILE_NAME}",
+            f"~/.{RC_FILE_NAME}",
             os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                f'.{RC_FILE_NAME}')
+                os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}"
+            ),
         ]
         target_loc = None
         for loc in default_locs:
@@ -98,29 +111,32 @@ class Utils:
                 break
 
         if not target_loc:
-            raise ValueError("No dotfile config found. "
-                             "Add to ~/.floatrc or ~/.config/floatrc "
-                             "or ~/.config/i3float/floatrc")
-
-        with open(target_loc, 'r') as f:
-            config = yaml.safe_load(f)
-        if not config or 'Settings' not in config:
             raise ValueError(
-                "Incorrect floatrc file sytax. Please follow yaml guidelines and example.")
+                "No dotfile config found. "
+                "Add to ~/.floatrc or ~/.config/floatrc "
+                "or ~/.config/i3float/floatrc"
+            )
 
-        monitors_yml_key = 'DisplayMonitors'
-        grid_yml_key = 'DefaultGrid'
-        auto_yml_key = 'AutoConvertToFloat'
-        snap_yml_key = 'SnapLocation'
-        grid_yml_syn = ['Rows', 'Columns']
-        settings = config['Settings']
+        with open(target_loc, "r") as f:
+            config = yaml.safe_load(f)
+        if not config or "Settings" not in config:
+            raise ValueError(
+                "Incorrect floatrc file sytax. Please follow yaml guidelines and example."
+            )
+
+        monitors_yml_key = "DisplayMonitors"
+        grid_yml_key = "DefaultGrid"
+        auto_yml_key = "AutoConvertToFloat"
+        snap_yml_key = "SnapLocation"
+        grid_yml_syn = ["Rows", "Columns"]
+        settings = config["Settings"]
 
         if monitors_yml_key in settings:
             DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
         if grid_yml_key in settings:
             DEFAUlT_GRID = {
-                'rows': settings[grid_yml_key][grid_yml_syn[0]],
-                'cols': settings[grid_yml_key][grid_yml_syn[1]],
+                "rows": settings[grid_yml_key][grid_yml_syn[0]],
+                "cols": settings[grid_yml_key][grid_yml_syn[1]],
             }
         if auto_yml_key in settings:
             AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
@@ -129,8 +145,7 @@ class Utils:
             if isinstance(settings[snap_yml_key], int):
                 SNAP_LOCATION = settings[snap_yml_key]
             else:
-                raise ValueError(
-                    "Unexpected Snap location data type (expected int)")
+                raise ValueError("Unexpected Snap location data type (expected int)")
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
@@ -138,9 +153,9 @@ class Utils:
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
         global SNAP_LOCATION
         # TODO - Expose more global fly configs
-        r = 'rows'
-        c = 'cols'
-        t = 'target'
+        r = "rows"
+        c = "cols"
+        t = "target"
         if r in kwargs and kwargs[r]:
             DEFAUlT_GRID[r] = kwargs[r]  # or DEFAUlT_GRID[r]
         if c in kwargs and kwargs[c]:
@@ -157,8 +172,11 @@ class FloatUtils:
     def assign_focus_node(self) -> None:
         tree = i3.get_tree()
         # for node in tree:
-        wkspc = [node for node in tree['nodes']
-                 if node['name'] == self.current_display['output']]
+        wkspc = [
+            node
+            for node in tree["nodes"]
+            if node["name"] == self.current_display["output"]
+        ]
         assert len(wkspc) > 0, "window could not be found"
         # wkspc = wkspc[0]
         self.iter = 0
@@ -171,12 +189,12 @@ class FloatUtils:
         self.iter += 1
         if not isinstance(node, dict):
             return
-        if node['focused']:
+        if node["focused"]:
             self.focused_node = node
             return
 
-        if (len(node['nodes']) != 0) or (len(node['floating_nodes']) != 0):
-            target_nodes = node['nodes'] + node['floating_nodes']
+        if (len(node["nodes"]) != 0) or (len(node["floating_nodes"]) != 0):
+            target_nodes = node["nodes"] + node["floating_nodes"]
             for root in target_nodes:
                 self.find_focused_window(root)
         else:
@@ -192,36 +210,31 @@ class FloatUtils:
         total_size = {}
         monitor_cnt = 0
         for display in self.displays:
-            if display['name'] not in DISPLAY_MONITORS:
+            if display["name"] not in DISPLAY_MONITORS:
                 continue
             display_screen_location = Location(
-                width=display['rect']['width'],
-                height=display['rect']['height'])
+                width=display["rect"]["width"], height=display["rect"]["height"]
+            )
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
 
-        active = [i for i in i3.get_workspaces() if i['focused']][0]
+        active = [i for i in i3.get_workspaces() if i["focused"]][0]
         return total_size, active
 
     def get_wk_number(self) -> int:
         c_monitor = 0
         for display in self.displays:
-            if display['name'] in DISPLAY_MONITORS:
+            if display["name"] in DISPLAY_MONITORS:
                 if self.match(display):
                     break
                 c_monitor += 1
         return c_monitor
 
     def match(self, display: dict) -> bool:
-        validations = [
-            ['name', 'output'],
-            ['current_workspace', 'name'],
-            'rect'
-        ]
+        validations = [["name", "output"], ["current_workspace", "name"], "rect"]
         for val in validations:
-            if val == 'rect':
-                if (display[val]['width'] !=
-                        self.current_display[val]['width']):
+            if val == "rect":
+                if display[val]["width"] != self.current_display[val]["width"]:
                     return False
             elif display[val[0]] != self.current_display[val[1]]:
                 return False
@@ -232,17 +245,19 @@ class FloatUtils:
 
 
 class MonitorCalculator(FloatUtils):
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
-    def get_offset(self, window: Location, target: Location,
-                   rows, cols: int) -> Location:
+    def get_offset(
+        self, window: Location, target: Location, rows, cols: int
+    ) -> Location:
         # 1) Calculate monitor center
         # 2) Calculate window offset
         # 3) Monitor center - offset = true center
         # 3 if) tensors are intersecting
         display_offset, target_offset = self.get_matrix_center(
-           rows, cols, window, target)
+            rows, cols, window, target
+        )
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
         center_x = display_offset.width - target_offset.width
@@ -250,17 +265,19 @@ class MonitorCalculator(FloatUtils):
         return Location(center_x, center_y)
 
     def calculate_grid(self, rows, cols):
-        print(f'grid rows: {rows}')
-        print(f'grid cols: {cols}')
+        print(f"grid rows: {rows}")
+        print(f"grid cols: {cols}")
         pass
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
-        return [Location(int(window.width/rows), int(window.height/cols))
-                for window in windows]
+        return [
+            Location(int(window.width / rows), int(window.height / cols))
+            for window in windows
+        ]
 
 
 class Movements(MonitorCalculator):
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
     def move_to_center(self, **kwargs) -> None:
@@ -276,10 +293,12 @@ class Movements(MonitorCalculator):
         # True center (accounting for multiple displays)
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
-        true_center = self.get_offset(window=self.area_matrix[
-                                      self.workspace_num],
-                                      target=target_pos,
-                                      rows=2, cols=2)
+        true_center = self.get_offset(
+            window=self.area_matrix[self.workspace_num],
+            target=target_pos,
+            rows=2,
+            cols=2,
+        )
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
         # Apply screen offset (XRandr)
@@ -291,8 +310,7 @@ class Movements(MonitorCalculator):
         print("Resizing...")
 
     def get_target(self, node):
-        return Location(width=node['rect']['width'],
-                        height=node['rect']['height'])
+        return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def snap_to_grid(self, **kwargs):
         """Moves the focused window to
@@ -301,11 +319,12 @@ class Movements(MonitorCalculator):
         # global DEFAUlT_GRID, SNAP_LOCATION
         print(DEFAUlT_GRID, SNAP_LOCATION)
         target_pos = self.get_target(self.focused_node)
-        true_center = self.get_offset(window=self.area_matrix[
-                                      self.workspace_num],
-                                      target=target_pos,
-                                      rows=DEFAUlT_GRID['rows'],
-                                      cols=DEFAUlT_GRID['cols'])
+        true_center = self.get_offset(
+            window=self.area_matrix[self.workspace_num],
+            target=target_pos,
+            rows=DEFAUlT_GRID["rows"],
+            cols=DEFAUlT_GRID["cols"],
+        )
 
         print("====")
         print(true_center)
@@ -319,7 +338,7 @@ class Movements(MonitorCalculator):
         if it is not float. If float, do nothing. Does not
         resize (feel free to combine) but i3 does so by default
         sometimes (based on config and instance rules)."""
-        Utils.dispatch_i3msg_com(command='float')
+        Utils.dispatch_i3msg_com(command="float")
 
 
 class FloatManager(Movements):
@@ -343,10 +362,7 @@ class FloatManager(Movements):
             self.make_resize,
             self.snap_to_grid,
         ]
-        self.com_map = {
-            c: e for c, e in zip(
-                kwargs['commands'],
-                executors)}
+        self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
 
     def run_command(self, cmd, **kwargs):
         if cmd not in self.com_map:
@@ -358,7 +374,7 @@ class FloatManager(Movements):
 def debugger():
     print("Entering debug mode. Evaluating input:")
     while 1:
-        cmd = input('>>> ')
+        cmd = input(">>> ")
         print(eval(cmd))
 
 
@@ -372,8 +388,8 @@ if __name__ == "__main__":
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
     manager = FloatManager(
-            commands=comx, target=args.target,
-            cols=args.cols, rows=args.rows)
+        commands=comx, target=args.target, cols=args.cols, rows=args.rows
+    )
 
     for action in args.actions:
         manager.run_command(cmd=action)
