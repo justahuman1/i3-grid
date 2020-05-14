@@ -1,5 +1,7 @@
+import subprocess
+import sys
+
 import floatwm
-import subprocess, sys
 
 
 class Unit:
@@ -14,16 +16,21 @@ class Unit:
         # out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
         # return out.stdout
 
+
+# Cache Test
+
+
 # FloatManager Test
+
 
 class ManagerTest(Unit):
     def __init__(self, ):
         super().__init__()
 
     def center_test(self, ):
-       (floatwm
-        .FloatManager()
-        .run_command('center'))
+        (floatwm
+         .FloatManager()
+         .run_command('center'))
 
     def grid_test(self, target):
         (floatwm
@@ -45,8 +52,11 @@ class UtilsTest(Unit):
     def yaml_load_test(self):
         floatwm.Utils.read_config()
 
+
 def help_test():
-    print(floatwm.Utils.dipatch_bash_command('python floatwm.py'))
+    val = floatwm.Utils.dipatch_bash_command('python floatwm.py')
+    help_err = "Incorrect main body (triggering a function without value)"
+    assert val is not None, help_err
 
 
 def metadata_test():

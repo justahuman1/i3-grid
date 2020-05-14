@@ -235,13 +235,14 @@ class MonitorCalculator(FloatUtils):
     def __init__(self, ):
         super().__init__()
 
-    def get_offset(self, window: Location, target: Location) -> Location:
+    def get_offset(self, window: Location, target: Location,
+                   rows, cols: int) -> Location:
         # 1) Calculate monitor center
         # 2) Calculate window offset
         # 3) Monitor center - offset = true center
         # 3 if) tensors are intersecting
-        display_offset, target_offset = self.get_screen_center(
-            window, target)
+        display_offset, target_offset = self.get_matrix_center(
+           rows, cols, window, target)
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
         center_x = display_offset.width - target_offset.width
@@ -253,8 +254,8 @@ class MonitorCalculator(FloatUtils):
         print(f'grid cols: {cols}')
         pass
 
-    def get_screen_center(self, *windows: Location) -> Location:
-        return [Location(int(window.width/2), int(window.height/2))
+    def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
+        return [Location(int(window.width/rows), int(window.height/cols))
                 for window in windows]
 
 
@@ -267,15 +268,18 @@ class Movements(MonitorCalculator):
         the absolute window center (corresponds to
         target=0)"""
         # we call the focused node the target
-        target_pos = Location(width=self.focused_node['rect']['width'],
-                              height=self.focused_node['rect']['height'])
+        target_pos = self.get_target(self.focused_node)
+        # Location(width=self.focused_node['rect']['width'],
+        #                       height=self.focused_node['rect']['height'])
         # print('target:', target_pos)
 
         # True center (accounting for multiple displays)
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
-        true_center = self.get_offset(window=self.area_matrix[self.workspace_num],
-                                      target=target_pos)
+        true_center = self.get_offset(window=self.area_matrix[
+                                      self.workspace_num],
+                                      target=target_pos,
+                                      rows=2, cols=2)
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
         # Apply screen offset (XRandr)
@@ -286,15 +290,29 @@ class Movements(MonitorCalculator):
     def make_resize(self, **kwargs):
         print("Resizing...")
 
+    def get_target(self, node):
+        return Location(width=node['rect']['width'],
+                        height=node['rect']['height'])
+
     def snap_to_grid(self, **kwargs):
         """Moves the focused window to
         the target (default: 0) position in
         current grid (default: 2*2)"""
         # global DEFAUlT_GRID, SNAP_LOCATION
         print(DEFAUlT_GRID, SNAP_LOCATION)
+        target_pos = self.get_target(self.focused_node)
+        true_center = self.get_offset(window=self.area_matrix[
+                                      self.workspace_num],
+                                      target=target_pos,
+                                      rows=DEFAUlT_GRID['rows'],
+                                      cols=DEFAUlT_GRID['cols'])
+
         print("====")
-        print(self.area_matrix)
-        print(self.focused_node)
+        print(true_center)
+        print("====")
+        # print(self.area_matrix)
+        # print(self.focused_node)
+        # self.area_matrix
 
     def make_float(self, **kwargs) -> None:
         """Moves the current window into float mode
@@ -353,10 +371,11 @@ if __name__ == "__main__":
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
+    manager = FloatManager(
+            commands=comx, target=args.target,
+            cols=args.cols, rows=args.rows)
 
     for action in args.actions:
-        FloatManager(
-            commands=comx, target=args.target,
-            cols=args.cols, rows=args.rows
-        ).run_command(cmd=action)
+        manager.run_command(cmd=action)
 
+    exit(1)

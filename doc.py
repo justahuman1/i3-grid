@@ -45,6 +45,13 @@ class Documentation:
             'resize': "Resize focused window (if float)",
             'snap': "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target.",
         }
+        _rc_def = '(default in rc file)'
+        _slc_txt = lambda ax: f'The number of {ax} slices in screen grid {_rc_def}'
+        self.flags = {
+            'rows': {'type':'int', 'help':_slc_txt('row')},
+            'cols': {'type':'int', 'help':_slc_txt('col')},
+            'target': {'type':'int', 'help':f'The grid location to snap the window to {_rc_def}'}
+        }
 
     def build_parser(self,choices: list) -> ArgumentParser:
         parser = ArgumentParser(description='Manage your floating windows with ease.',formatter_class=CustomFormatter)
@@ -52,12 +59,11 @@ class Documentation:
         parser.add_argument('actions', metavar='<action>', type=str, nargs='+',
                             choices=choices,
                             help=self.action_header())
-        parser.add_argument('--rows', type=int,
-                help='The number of row slices in screen grid (default in rc file)')
-        parser.add_argument('--cols', type=int,
-                help='The number of col slices in screen grid (default in rc file)')
-        parser.add_argument('--target', type=int,
-                help='The grid location to snap the window to (default: 0)')
+
+        for flag in self.flags:
+            parser.add_argument(f'--{flag}',
+                    type=eval(self.flags[flag]['type']),
+                    help=self.flags[flag]['help'])
 
         group = parser.add_argument_group(title='Actions')
         for action, desc in self.actions.items():
