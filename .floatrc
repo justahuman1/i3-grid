@@ -1,3 +1,19 @@
+# License:
+#     Copyright (C) 2020 justahuman1
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # rc file may be in the following paths:
 # ~/.config/i3float/floatrc
 # ~/.config/floatrc
@@ -6,9 +22,14 @@
 
 MetaData:
     Main: i3-float-wm
+    # We use yaml as the file type (easy to read, standard for most python configs)
+    # so we do not have to parse custom rc format.
     ThisFileType: yaml
     Source: floatwm.py
 Settings:
+# All of the following settings can be overridden on the fly
+# via command line args. Ex: python i3float.py --<flag> overrideValue
+
     # Name of your monitor as recorded by 'i3-msg -t get_outputs'
     # Exclude root displays (ex: xroot-0)
     DisplayMonitors:
@@ -28,6 +49,8 @@ Settings:
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.
     # 0 is center of the whole screen (no resizing)
+    # Every other number is auto-resized, unless auto-resize is also
+    # off
     # Default example:
     #  1  |  2  |  3
     #  --------------

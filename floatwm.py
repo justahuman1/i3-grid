@@ -23,6 +23,22 @@ the logic respective to its name. The process flow is as follows:
     3) MonitorCalculator: Manages the xrandr display settings to make display agnostic window decisions.
     4) FloatUtils: The meta functions of the manager that directly assist the movements and calculator.
     5) Utils: Additional utilities to abstract debugging, RPC calls, etc.
+-------------
+License:
+    Copyright (C) 2020 justahuman1
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 # Formatted with Black: https://github.com/psf/black
 
@@ -296,14 +312,16 @@ class MonitorCalculator(FloatUtils):
         print(f"grid cols: {cols}")
         print(f"window: {window}")
         print(f"display: {display}")
-        # per_quadrant_dim = Location(display.width / cols, display.height / rows)
+        per_quadrant_dim = Location(int(display.width/cols), int(display.height/rows))
         # print('per quad:', per_quadrant_dim)
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
         i = 1
         for row in range(len(grid)):
             for col in range(len(grid[row])):
-                grid[row][col] = i
+                grid[row][col] = (i, Location(
+                    ))
                 i += 1
+        # print(per_quadrant_dim)
 
         print(grid)
 
