@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import pickle
 import argparse
 import os
 import subprocess
@@ -164,6 +165,23 @@ class Utils:
             SNAP_LOCATION = kwargs[t]  # or SNAP_LOCATION
 
 
+class CacheManager:
+    # Initiate for class, not per instance
+    data_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}")
+
+    def __init__(self, ):
+        super().__init__()
+
+    def get(self, key):
+        try:
+            cache = pickle.load(open('.cache.p', 'rb'))
+        except FileNotFoundError:
+            return None
+
+        return cache[key]
+
+
+
 class FloatUtils:
     def __init__(self):
         self.area_matrix, self.current_display = self._calc_metadata()
@@ -319,6 +337,8 @@ class Movements(MonitorCalculator):
         # global DEFAUlT_GRID, SNAP_LOCATION
         print(DEFAUlT_GRID, SNAP_LOCATION)
         target_pos = self.get_target(self.focused_node)
+        print(target_pos)
+        print('target_pos')
         true_center = self.get_offset(
             window=self.area_matrix[self.workspace_num],
             target=target_pos,
@@ -387,11 +407,11 @@ if __name__ == "__main__":
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
-    manager = FloatManager(
-        commands=comx, target=args.target, cols=args.cols, rows=args.rows
-    )
 
     for action in args.actions:
+        manager = FloatManager(
+            commands=comx, target=args.target, cols=args.cols, rows=args.rows
+    )
         manager.run_command(cmd=action)
 
     exit(1)

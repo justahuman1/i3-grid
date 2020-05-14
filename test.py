@@ -21,6 +21,12 @@ class Unit:
 
 
 # Cache Test
+class CacheTest:
+    def __init__(self, ):
+        super().__init__()
+
+    def read_file(self, ):
+        print(floatwm.CacheManager().get('key'))
 
 
 # FloatManager Test
@@ -70,5 +76,6 @@ def metadata_test():
 # center_test()
 # cmd_line_test()
 # ManagerTest().center_test()
-help_test()
+# help_test()
 # UtilsTest().yaml_load_test()
+CacheTest().read_file()
