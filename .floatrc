@@ -21,7 +21,7 @@
 # ./.floatrc  --> Same path as script (floatwm.py)
 
 MetaData:
-    Main: i3-float-wm
+    Name: i3-float-wm
     # We use yaml as the file type (easy to read, standard for most python configs)
     # so we do not have to parse custom rc format.
     ThisFileType: yaml
