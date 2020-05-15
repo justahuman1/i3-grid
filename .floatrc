@@ -51,7 +51,7 @@ Settings:
         # Offset from top, right, bottom, left (in order)
         # This format is similar to CSS
         # Units: pixels {int}
-        - 10 # Top
+        - 20 # Top
         - 10 #
         - 20
         - 10
