@@ -58,6 +58,8 @@ SNAP_LOCATION = 0
 CUSTOM_PERCENTAGE = 50
 RC_FILE_NAME = "floatrc"
 DEFAUlT_GRID = {"rows": 2, "cols": 2}
+# Follows CSS format
+# [Top, Right, Bottom, Left]
 TILE_OFFSET = [0, 0, 0, 0]
 DISPLAY_MONITORS = {
     "eDP1",
@@ -128,6 +130,7 @@ class Utils:
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
         global SNAP_LOCATION, AUTO_RESIZE
+        global TILE_OFFSET
 
         default_locs = [
             f"~/.config/i3float/{RC_FILE_NAME}" f"~/.config/{RC_FILE_NAME}",
@@ -159,25 +162,29 @@ class Utils:
         # This turned into a really bad design. I need
         # to simply keep a global dictionary so we can dynamically
         # parse the yaml file. I will do this after mvp.
-        monitors_yml_key = "DisplayMonitors"
-        grid_yml_key = "DefaultGrid"
-        auto_yml_key = "AutoConvertToFloat"
-        resize_yml_key = "AutoResize"
+        # But this way is much more seralized for OOP (scalability).
         snap_yml_key = "SnapLocation"
         grid_yml_syn = ["Rows", "Columns"]
+        grid_yml_key = "DefaultGrid"
+        offs_yml_key = "GridOffset"
+        monitors_yml_key = "DisplayMonitors"
+        auto_yml_key = "AutoConvertToFloat"
+        resize_yml_key = "AutoResize"
         settings = config["Settings"]
 
         if resize_yml_key in settings:
             AUTO_RESIZE = settings[resize_yml_key]
+        if auto_yml_key in settings:
+            AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
         if monitors_yml_key in settings:
             DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
+        if offs_yml_key in settings:
+            TILE_OFFSET = settings[offs_yml_key]
         if grid_yml_key in settings:
             DEFAUlT_GRID = {
                 "rows": settings[grid_yml_key][grid_yml_syn[0]],
                 "cols": settings[grid_yml_key][grid_yml_syn[1]],
             }
-        if auto_yml_key in settings:
-            AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
 
         if snap_yml_key in settings:
             if isinstance(settings[snap_yml_key], int):
@@ -203,8 +210,10 @@ class Utils:
         if p in kwargs and kwargs[p]:
             CUSTOM_PERCENTAGE = kwargs[p]
 
-    @staticmethod
-    def offset_override(**kwargs):
+    # @staticmethod
+    # def offset_override(**kwargs):
+    #     global TILE_OFFSET
+    #     assert "display" in kwargs, "Missing Display Information"
 
 
 class FloatUtils:
@@ -290,6 +299,19 @@ class MonitorCalculator(FloatUtils):
     def __init__(self,):
         super().__init__()
 
+    def calc_monitor_offset(self, target: int, point: Location) -> Location:
+        assert target < len(
+            DEFAUlT_GRID["rows"] * DEFAUlT_GRID["cols"]
+        ), "Incorrect Target in grid"
+        # TODO
+        # Check if target around border
+        # if so, apply offset/(num rows or cols) (if resize)
+        # if snap and border, apply full offset
+        # if border:
+        point.height -= TILE_OFFSET[0]/DEFAUlT_GRID['rows']
+        point.width -= TILE_OFFSET[1]
+        return point
+
     def get_offset(self, center: bool = True) -> Location:
         # No globals required (read only)
         # 1) Calculate monitor center
@@ -341,9 +363,21 @@ class MonitorCalculator(FloatUtils):
                     )
                     row_match = row_tracker
                     roll_width = 0
+
+                # Offsets
+                # y axis offsets
+                if row == 0:
+                    roll_height += TILE_OFFSET[0]
+                    print(roll_height)
+                elif row == len(grid) - 1:
+                    roll_height -= TILE_OFFSET[2]
+
                 rolling_dimension = Location(roll_width, roll_height)
                 grid[row][col] = (i, rolling_dimension)
                 i += 1
+        # print("le grid")
+        # print(grid)
+        # print("le grid")
         return grid
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
@@ -377,6 +411,10 @@ class Movements(MonitorCalculator):
 
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
+        print("MOOO")
+        print(target_size)
+        print("MOOO")
+        exit()
         Utils.dispatch_i3msg_com("resize", target_size)
 
     def custom_resize(self, **kwargs):
@@ -422,12 +460,13 @@ class FloatManager(Movements):
         Utils.read_config()
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
-        # 3) Offset override
-        Utils.offset_override(**kwargs)
 
         # Run initalizing commands
         # partitioned for multiple commands
         self.post_commands()
+
+        # 3) Offset override
+        # Utils.offset_override(**kwargs)
 
         if AUTO_FLOAT_CONVERT:
             self.make_float()

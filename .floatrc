@@ -45,6 +45,16 @@ Settings:
         # int (Recommended range: 2-4 for laptops, 2-8 for monitors)
         Rows: 3
         Columns: 3
+    GridOffset:
+        # Offset from screen borders (useful for polybar, etc.)
+        # Order here matters.
+        # Offset from top, right, bottom, left (in order)
+        # This format is similar to CSS
+        # Units: pixels {int}
+        - 10 # Top
+        - 10 #
+        - 10
+        - 10
 
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.
@@ -75,5 +85,5 @@ Settings:
     # Can be overridden on the fly (call resize
     # function manually)
     # boolean: true/false
-    AutoResize: false
+    AutoResize: true
 
