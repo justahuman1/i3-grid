@@ -385,6 +385,8 @@ class Movements(MonitorCalculator):
         if AUTO_RESIZE:
             self.make_resize()
 
+        print("Le snap:")
+        print(SNAP_LOCATION)
         Utils.dispatch_i3msg_com("move", true_center)
 
     def reset_win(self, **kwargs) -> None:
