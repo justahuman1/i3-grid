@@ -21,6 +21,11 @@
 
 // Documentation: https://github.com/davatorium/rofi/blob/next/doc/rofi-theme.5.markdown
 
+// This is the rasi frontend for rofi dmenu.
+// Dynamic Grid sizing [WIP]
+// For now, only a 2x2 matrix is supported (custom shapes
+// can be made with 'X' and inputting custom grids)
+
 configuration {
     display-drun: "FloatWM";
 	show-icons: true;

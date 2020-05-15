@@ -53,7 +53,7 @@ Settings:
         # Units: pixels {int}
         - 10 # Top
         - 10 #
-        - 10
+        - 20
         - 10
 
     # Default location to snap window to (if not given on the fly)

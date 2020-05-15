@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 #     GitHub: justahuman1
 #     URL: https://github.com/justahuman1
 #     License: GPL-3.0
@@ -18,6 +17,8 @@
 #          You should have received a copy of the GNU General Public License
 #          along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# ---- Rofi Frontend ----
+# src file absolute path
 app_abs_path="/home/sai/Code/temp/quadrant3"
 # Set rofi env vars for rasi config
 # Corresponds to grid numbers..
@@ -106,6 +107,7 @@ elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     exit
 fi
 
+# Single select options (These can also be combined!)
 if [[ "$chosen"  ==  "0" ]]; then
     python  $src_file float resize snap --target 0
 elif [[ "$chosen"  ==  "C" ]]; then

@@ -310,27 +310,21 @@ class MonitorCalculator(FloatUtils):
         # if border:
         mode_defs = {
             "snap": lambda *d: TILE_OFFSET[d[0]],
-            "resize": lambda *xy: TILE_OFFSET[xy[0]] / DEFAUlT_GRID[xy[1]],
+            "resize": lambda *xy: TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[1]],
         }
         chosen_axis = self.find_grid_axis()
-        if chosen_axis[0] == 0:  # row top
-            point.height += mode_defs[mode](0, rows)
-        elif chosen_axis[0] == rows:  # Last row
-            point.height -= mode_defs[mode](2, rows)
+        t_h = point.height
+        t_w = point.width
+        if chosen_axis[0] == 0 and mode == 'snap':  # row top
+            t_h += mode_defs[mode](0, 'rows')
+        if chosen_axis[0] == rows-1 and mode == 'resize':  # row bottom
+            t_h -= mode_defs[mode](2, 2)
+        if chosen_axis[1] == 0 and mode == 'snap':  # left offset
+            t_w += mode_defs[mode](3, 'cols')
+        if chosen_axis[1] == cols and mode == 'resize':  # right offset
+            t_w -= mode_defs[mode](1, 1)
 
-        if chosen_axis[1] == 0:  # left offset
-            point.width += mode_defs[mode](3, cols)
-        elif chosen_axis[1] == cols:  # right offset
-            point.width += mode_defs[mode](1, cols)
-
-        print("chosen_axis")
-        print(chosen_axis)
-        print("^chosen_axis")
-        exit()
-
-        point.height -= TILE_OFFSET[0] / DEFAUlT_GRID["rows"]
-        point.width -= TILE_OFFSET[1]
-        return point
+        return Location(t_w, t_h)
 
     def get_offset(self, center: bool = True) -> Location:
         # No globals required (read only)
@@ -365,9 +359,9 @@ class MonitorCalculator(FloatUtils):
         return divmod(SNAP_LOCATION - 1, DEFAUlT_GRID["cols"])
 
     def calculate_grid(self, rows, cols, display):
-        self.per_quadrant_dim = Location(
-            int(display.width / cols), int(display.height / rows)
-        )
+        main_loc = Location(int(display.width / cols), int(display.height / rows))
+        # Account for window size offset (grid quadrant size - offset/(rows | cols))
+        self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
         i = 1
         rolling_dimension = Location(0, 0)
@@ -387,12 +381,11 @@ class MonitorCalculator(FloatUtils):
                 # y axis offsets
                 if row == 0:
                     roll_height += TILE_OFFSET[0]
-                    print(roll_height)
                 elif row == len(grid) - 1:
                     roll_height -= TILE_OFFSET[2]
 
                 rolling_dimension = Location(roll_width, roll_height)
-                true_top_left = self.calc_monitor_offset(rolling_dimension)
+                true_top_left = self.calc_monitor_offset("snap", rolling_dimension)
                 grid[row][col] = (i, rolling_dimension)
                 i += 1
         return grid
@@ -428,6 +421,7 @@ class Movements(MonitorCalculator):
 
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
+        print("Le target size:", self.per_quadrant_dim)
         Utils.dispatch_i3msg_com("resize", target_size)
 
     def custom_resize(self, **kwargs):
