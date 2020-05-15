@@ -74,7 +74,10 @@ class Documentation:
         self.flags = {
             "rows": {"type": "int", "help": _slc_txt("row")},
             "cols": {"type": "int", "help": _slc_txt("col")},
-            "perc": {"type": "int", "help": f"{_ffa('csize')} (Percentage of screen {{int}}[1-100])"},
+            "perc": {
+                "type": "int",
+                "help": f"{_ffa('csize')} (Percentage of screen {{int}}[1-100])",
+            },
             "target": {
                 "type": "int",
                 "help": f"The grid location to snap the window to {_rc_def}",

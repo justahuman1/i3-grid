@@ -88,15 +88,11 @@ def metadata_test():
 
 
 class IntegrationTests:
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
     def map_command_chain(self,):
-        comx = [
-            'float',
-            'center',
-            'snap'
-        ]
+        comx = ["float", "center", "snap"]
 
 
 # TODO - Add commands to dictionary and consider pytest

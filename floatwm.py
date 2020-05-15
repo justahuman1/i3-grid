@@ -308,7 +308,7 @@ class MonitorCalculator(FloatUtils):
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
         # if border:
-        point.height -= TILE_OFFSET[0]/DEFAUlT_GRID['rows']
+        point.height -= TILE_OFFSET[0] / DEFAUlT_GRID["rows"]
         point.width -= TILE_OFFSET[1]
         return point
 
@@ -414,9 +414,7 @@ class Movements(MonitorCalculator):
         Utils.dispatch_i3msg_com("resize", target_size)
 
     def custom_resize(self, **kwargs):
-        print(CUSTOM_PERCENTAGE)
-        ppt = f"{CUSTOM_PERCENTAGE}ppt"
-        Utils.dispatch_i3msg_com("custom", data=ppt)
+        Utils.dispatch_i3msg_com("custom", data=f"{CUSTOM_PERCENTAGE}ppt")
 
     def get_target(self, node):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
