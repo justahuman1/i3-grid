@@ -65,13 +65,16 @@ class Documentation:
             "float": "Toggle the float of a window (overrides config file for otf movements)",
             "resize": "Resize focused window (if float)",
             "snap": "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target",
+            "csize": "Resize the window into a custom size of screen (1-100)",
             "reset": "Resets the focused window into the middle occupying 75ppt screen space (i3 default)",
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"The number of {ax} slices in screen grid {_rc_def}"
+        _ffa = lambda action: f"Flag for action: '{action}'"
         self.flags = {
             "rows": {"type": "int", "help": _slc_txt("row")},
             "cols": {"type": "int", "help": _slc_txt("col")},
+            "perc": {"type": "int", "help": f"{_ffa('csize')} (Percentage of screen {{int}}[1-100])"},
             "target": {
                 "type": "int",
                 "help": f"The grid location to snap the window to {_rc_def}",

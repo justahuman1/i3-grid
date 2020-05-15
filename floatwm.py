@@ -55,6 +55,7 @@ DisplayMap = Dict[int, Location]
 AUTO_FLOAT_CONVERT = False
 AUTO_RESIZE = False
 SNAP_LOCATION = 0
+CUSTOM_PERCENTAGE = 50
 RC_FILE_NAME = "floatrc"
 DEFAUlT_GRID = {"rows": 2, "cols": 2}
 DISPLAY_MONITORS = {
@@ -86,30 +87,31 @@ class Utils:
             raise ValueError("Incorrect data type/length for i3 command")
         w = str(data.width) if data.width > 0 else "0"
         h = str(data.height) if data.height > 0 else "0"
-        if command == "resize":
-            # 1189, 652 is a standard i3 window size for floating nodes
-            # Data should be a len(Vector) == 2 (width, height)
-            return i3.resize("set", w, h)
-        if command == "move":
-            print(f'w: {w}, h: {h}"')
-            return i3.move("window", "position", w, h)
-        if command == "float":
-            return i3.floating("enable")
-        if command == "reset":
-            i3.resize("set", "75ppt", "75ppt")
-            return i3.move("window", " position", "center")
+        dispatcher = {
+            # Dictionary of commands to execute with i3 comx
+            "resize": lambda *d: i3.resize("set", d[0], d[1]),
+            "move": lambda *d: i3.move("window", "position", d[0], d[1]),
+            "float": lambda *d: i3.floating("enable"),
+            "reset": lambda *d: (
+                i3.resize("set", "75ppt", "75ppt")
+                and i3.move("window", " position", "center")
+            ),
+            "custom": lambda *d: i3.resize("set", d[0], d[0]),
+        }
+        dispatcher[command](w, h)
 
     @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
         try:
-            if elem:
-                if elem > len(sys.argv[1:]):
-                    return None
-                elif len(sys.argv[1:]) < 2:
-                    return [4, 4][elem]
-                return int(sys.argv[elem])
-            else:
+            if not elem:
                 return [int(i) for i in sys.argv[1:]] or [4, 4]
+
+            if elem > len(sys.argv[1:]):
+                return None
+            elif len(sys.argv[1:]) < 2:
+                return [4, 4][elem]
+            return int(sys.argv[elem])
+
         except ValueError:
             return [4, 4]
 
@@ -178,34 +180,20 @@ class Utils:
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
         global SNAP_LOCATION, DEFAUlT_GRID
+        global CUSTOM_PERCENTAGE
         # TODO - Expose more global fly configs
         r = "rows"
         c = "cols"
         t = "target"
+        p = "perc"
         if r in kwargs and kwargs[r]:
             DEFAUlT_GRID[r] = kwargs[r]
         if c in kwargs and kwargs[c]:
             DEFAUlT_GRID[c] = kwargs[c]
         if t in kwargs and kwargs[t]:
             SNAP_LOCATION = kwargs[t]
-
-
-class CacheManager:
-    # Initiate for class, not per instance
-    data_location = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}"
-    )
-
-    def __init__(self,):
-        super().__init__()
-
-    def get(self, key):
-        try:
-            cache = pickle.load(open(".cache.p", "rb"))
-        except FileNotFoundError:
-            return None
-
-        return cache[key]
+        if p in kwargs and kwargs[p]:
+            CUSTOM_PERCENTAGE = kwargs[p]
 
 
 class FloatUtils:
@@ -324,9 +312,6 @@ class MonitorCalculator(FloatUtils):
         return divmod(SNAP_LOCATION - 1, DEFAUlT_GRID["cols"])
 
     def calculate_grid(self, rows, cols, display):
-        # val = CacheManager.get(self.cache_resz)
-        # if val:
-        #     return val
         self.per_quadrant_dim = Location(
             int(display.width / cols), int(display.height / rows)
         )
@@ -368,7 +353,7 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
-                # True center (accounting for multiple displays)
+        # True center (accounting for multiple displays)
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
         true_center = self.get_offset()
@@ -381,7 +366,12 @@ class Movements(MonitorCalculator):
 
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
-        Utils.dispatch_i3msg_com('resize', target_size)
+        Utils.dispatch_i3msg_com("resize", target_size)
+
+    def custom_resize(self, **kwargs):
+        print(CUSTOM_PERCENTAGE)
+        ppt = f"{CUSTOM_PERCENTAGE}ppt"
+        Utils.dispatch_i3msg_com("custom", data=ppt)
 
     def get_target(self, node):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
@@ -391,18 +381,16 @@ class Movements(MonitorCalculator):
         the target (default: 0) position in
         current grid (default: 2*2)"""
         target_pos = self.get_target(self.focused_node)
-        true_center = self.get_offset(
-            center=False,
-        )
+        true_center = self.get_offset(center=False,)
         if AUTO_RESIZE:
             self.make_resize()
 
-        Utils.dispatch_i3msg_com('move', true_center)
+        Utils.dispatch_i3msg_com("move", true_center)
 
     def reset_win(self, **kwargs) -> None:
         """Moves to center and applies default tile
         to float properties (center, 75ppt)"""
-        Utils.dispatch_i3msg_com(command='reset')
+        Utils.dispatch_i3msg_com(command="reset")
 
     def make_float(self, **kwargs) -> None:
         """Moves the current window into float mode
@@ -437,6 +425,7 @@ class FloatManager(Movements):
             self.make_float,
             self.make_resize,
             self.snap_to_grid,
+            self.custom_resize,
             self.reset_win,
         ]
         self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
@@ -467,10 +456,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     for action in args.actions:
-        manager = FloatManager(
-            commands=comx, target=args.target, cols=args.cols, rows=args.rows
-        )
-        manager.run_command(cmd=action)
+        FloatManager(
+            commands=comx,
+            target=args.target,
+            cols=args.cols,
+            rows=args.rows,
+            perc=args.perc,
+        ).run_command(cmd=action)
+
     end = datetime.datetime.now()
     print("Total Time: ", end - start)
     exit(0)
