@@ -1,6 +1,5 @@
 configuration {
-    drun-display-format: "{icon} {name}";
-    display-drun: "Apps";
+    display-drun: "FloatWM>";
 	show-icons: true;
 	icon-theme: "Papirus-Dark";
 	location: 2;
@@ -10,7 +9,7 @@ configuration {
     fullscreen: true;
     show-icons: true;
 	terminal: "termite";
-	sidebar-mode: false;
+	sidebar-mode: true;
 }
 
 // black version
@@ -34,7 +33,9 @@ window {
 
 mainbox {
   children: [ inputbar, listview ];
-  margin: 35% 0% 35% 80%;
+  margin: 37% 0% 37% 80%;
+  /* Max height will help large monitor
+  strech prevention */
   /* max-height: 10px; */
   background-color: @bg;
   border-radius: 12;
