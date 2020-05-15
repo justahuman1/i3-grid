@@ -5,7 +5,7 @@ app_abs_path="/home/sai/Code/temp/quadrant3"
 # Corresponds to grid numbers..
 export COLS=2
 export LINES=2
-rofi_command="rofi -i -theme $app_abs_path/rofi/style_normal.rasi -multi-select"
+rofi_command="rofi -i -theme $app_abs_path/rofi/matrix.rasi -multi-select"
 
 # Column and row chooser possibility
 join() { local IFS="$1"; shift; echo "$*"; }
