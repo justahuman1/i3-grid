@@ -85,8 +85,7 @@ class Utils:
         # Immutable location tuple accounts for mutation error
         if not isinstance(data, (list, tuple)) and len(data) == 2:
             raise ValueError("Incorrect data type/length for i3 command")
-        w = str(data.width) if data.width > 0 else "0"
-        h = str(data.height) if data.height > 0 else "0"
+
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
             "resize": lambda *d: i3.resize("set", d[0], d[1]),
@@ -96,9 +95,17 @@ class Utils:
                 i3.resize("set", "75ppt", "75ppt")
                 and i3.move("window", " position", "center")
             ),
-            "custom": lambda *d: i3.resize("set", d[0], d[0]),
+            "custom": (
+                lambda *d: i3.resize("set", d[0], d[0])
+                and i3.move("window", "position", "center")
+            ),
         }
-        dispatcher[command](w, h)
+        if isinstance(data, str):
+            dispatcher[command](data)
+        elif isinstance(data, Location):
+            w = str(data.width) if data.width > 0 else "0"
+            h = str(data.height) if data.height > 0 else "0"
+            dispatcher[command](w, h)
 
     @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
@@ -384,6 +391,7 @@ class Movements(MonitorCalculator):
         true_center = self.get_offset(center=False,)
         if AUTO_RESIZE:
             self.make_resize()
+            self.post_commands()
 
         print("Le snap:")
         print(SNAP_LOCATION)
@@ -410,18 +418,14 @@ class FloatManager(Movements):
         Utils.read_config()
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
-        # If not float, make float -> <movement>
-        self.workspace_num = self.get_wk_number()
-        # Set the focused node
-        self.assign_focus_node()
-        self.float_grid = self.calculate_grid(
-            DEFAUlT_GRID["rows"],
-            DEFAUlT_GRID["cols"],
-            self.area_matrix[self.workspace_num],
-        )
+        # Run initalizing commands
+        # partitioned for multiple commands
+        self.post_commands()
 
         if AUTO_FLOAT_CONVERT:
             self.make_float()
+            self.post_commands()
+
         executors = [
             self.move_to_center,
             self.make_float,
@@ -437,6 +441,21 @@ class FloatManager(Movements):
             raise KeyError("No corresponding run command to input:", cmd)
 
         self.com_map[cmd](**kwargs)
+
+    def post_commands(self):
+        # If not float, make float -> <movement>
+        self.workspace_num = self.get_wk_number()
+        # Set the focused node
+        self.assign_focus_node()
+        # with open('~/tst.json', 'w+') as f:
+        #     f.write(str(self.focused_node))
+        # print(self.focused_node)
+        # exit()
+        self.float_grid = self.calculate_grid(
+            DEFAUlT_GRID["rows"],
+            DEFAUlT_GRID["cols"],
+            self.area_matrix[self.workspace_num],
+        )
 
 
 def debugger():

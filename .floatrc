@@ -46,20 +46,6 @@ Settings:
         Rows: 3
         Columns: 3
 
-    # If you run floatwm on a non-floating window,
-    # it can either prompt you, or automatically
-    # convert to float without prompt.
-    # boolean: true/false
-    AutoConvertToFloat: true
-
-    # If auto resize is true, snapping a window to
-    # the target value in the grid will resize it
-    # to fit proportional to the grid quadrant.
-    # Can be overridden on the fly (call resize
-    # function manually)
-    # boolean: true/false
-    AutoResize: true
-
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.
     # 0 is center of the whole screen (no resizing)
@@ -73,4 +59,21 @@ Settings:
     #  7  |  8  |  9
     SnapLocation: 0
 
+    # The percentage of screen the
+    # reset function will default the terminal to.
+    DefaultResetPercentage: 75
+
+    # If you run floatwm on a non-floating window,
+    # it can either prompt you, or automatically
+    # convert to float without prompt.
+    # boolean: true/false
+    AutoConvertToFloat: true
+
+    # If auto resize is true, snapping a window to
+    # the target value in the grid will resize it
+    # to fit proportional to the grid quadrant.
+    # Can be overridden on the fly (call resize
+    # function manually)
+    # boolean: true/false
+    AutoResize: false
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-rofi_command="rofi -theme rofi/style_normal.rasi"
+app_abs_path="/home/sai/Code/temp/quadrant3"
+rofi_command="rofi -theme $app_abs_path/rofi/style_normal.rasi"
 
 
 # Column and row chooser possibility
@@ -20,6 +21,7 @@ grid=(
     "B" # Bottom
     "C" # Center (75% screen)
     "X" # Custom row, col, target parsing
+    "P" # Custom Percentage, center window
 )
 # Without the swap, we can make it dynamic and allow on the fly
 # grids. We need to change our python library to adjust for this.
@@ -39,21 +41,23 @@ if [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     exit
 fi
 
-if [[ "$chosen"  ==  "L" ]]; then
-    python ./floatwm.py float snap --cols 2 --rows 1 --target 1
-    exit
+# Path to the src python file
+src_file="$app_abs_path/floatwm.py"
+if [[ "$chosen"  ==  "0" ]]; then
+    python  $src_file float resize snap --target 0
+elif [[ "$chosen"  ==  "L" ]]; then
+    python  $src_file float resize snap --cols 2 --rows 1 --target 1
 elif [[ "$chosen"  ==  "R" ]]; then
-    python ./floatwm.py float snap --cols 2 --rows 1 --target 2
-    exit
+    python $src_file float resize snap --cols 2 --rows 1 --target 2
 elif [[ "$chosen"  ==  "T" ]]; then
-    python ./floatwm.py float snap --cols 1 --rows 2 --target 1
-    exit
+    python $src_file float resize snap --cols 1 --rows 2 --target 1
 elif [[ "$chosen"  ==  "B" ]]; then
-    python ./floatwm.py float snap --cols 1 --rows 2 --target 2
-    exit
+    python $src_file float resize snap --cols 1 --rows 2 --target 2
 elif [[ "$chosen"  ==  "C" ]]; then
-    python ./floatwm.py float reset
-    exit
+    python $src_file float reset
+elif [[ "$chosen"  ==  "P" ]]; then
+    p="$($rofi_command -dmenu -selected-row 0)"
+    python $src_file csize --perc=$p
 elif [[ "$chosen"  ==  "X" ]]; then
     custom="$($rofi_command -dmenu -selected-row 0)"
     IFS=' ' read -ra r_c_t <<< "$custom"
@@ -61,12 +65,11 @@ elif [[ "$chosen"  ==  "X" ]]; then
         echo "Incorrect Argument Length (Need Row, Col, Target)"
         exit
     fi
-    echo "target: ${r_c_t[2]}"
-    python ./floatwm.py \
-      float snap  \
-      --cols ${r_c_t[1]} --rows ${r_c_t[1]}  \
+    python $src_file \
+      float resize snap  \
+      --cols ${r_c_t[0]} --rows ${r_c_t[1]}  \
       --target ${r_c_t[2]}
-    exit
+else
+    python $src_file float resize snap --cols 2 --rows 2 --target $chosen
 fi
 
-python ./floatwm.py float snap --cols 2 --rows 2 --target $chosen
