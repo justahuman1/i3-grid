@@ -42,7 +42,7 @@ Settings:
         - "VGA"
     DefaultGrid:
         # These are the only two grid attributes
-        # int
+        # int (Recommended range: 2-4 for laptops, 2-8 for monitors)
         Rows: 3
         Columns: 3
 
