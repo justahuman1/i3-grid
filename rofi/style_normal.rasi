@@ -33,7 +33,7 @@ window {
 
 mainbox {
   children: [ inputbar, listview ];
-  margin: 40% 0% 43% 86%;
+  margin: 40% 0.3% 43% 90%;
   /* Max height will help large monitor
   strech prevention Does not apply in rofi config */
   /* max-height: 10px; */
@@ -55,7 +55,7 @@ element {
   text-color: @item;
   orientation: vertical;
   /* padding: 8 12 8 12; */
-  padding: 0 0 6 -5;
+  padding: 0 0 6 -6;
   border-radius: 6;
 }
 
@@ -79,7 +79,7 @@ element-icon {
 
 element-text {
   horizontal-align: 0.5;
-  vertical-align: 0.5;
+  vertical-align: 2.5;
   text-color: inherit;
   /* padding: 10 10 10 10; */
 }
