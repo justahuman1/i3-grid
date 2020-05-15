@@ -1,5 +1,5 @@
 configuration {
-    display-drun: "FloatWM>";
+    display-drun: "FloatWM";
 	show-icons: true;
 	icon-theme: "Papirus-Dark";
 	location: 2;
@@ -8,7 +8,7 @@ configuration {
 	bw: 0;
     fullscreen: true;
     show-icons: true;
-	terminal: "termite";
+	terminal: "kitty";
 	sidebar-mode: true;
 }
 
@@ -58,9 +58,8 @@ element {
 }
 
 element selected {
-  background-color: steelblue;
+  background-color: rgba(9, 145, 224, 0.4);
   border-color: #ffffff0A;
-  text-color: @ac-txt;
   transition: 20;
 }
 
