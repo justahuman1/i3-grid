@@ -299,16 +299,35 @@ class MonitorCalculator(FloatUtils):
     def __init__(self,):
         super().__init__()
 
-    def calc_monitor_offset(self, target: int, point: Location) -> Location:
-        assert target < len(
-            DEFAUlT_GRID["rows"] * DEFAUlT_GRID["cols"]
-        ), "Incorrect Target in grid"
+    def calc_monitor_offset(self, mode: str, point: Location) -> Location:
+        rows = DEFAUlT_GRID["rows"]
+        cols = DEFAUlT_GRID["cols"]
+        assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
         # TODO
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
         # if border:
-        # self.
+        mode_defs = {
+            "snap": lambda *d: TILE_OFFSET[d[0]],
+            "resize": lambda *xy: TILE_OFFSET[xy[0]] / DEFAUlT_GRID[xy[1]],
+        }
+        chosen_axis = self.find_grid_axis()
+        if chosen_axis[0] == 0:  # row top
+            point.height += mode_defs[mode](0, rows)
+        elif chosen_axis[0] == rows:  # Last row
+            point.height -= mode_defs[mode](2, rows)
+
+        if chosen_axis[1] == 0:  # left offset
+            point.width += mode_defs[mode](3, cols)
+        elif chosen_axis[1] == cols:  # right offset
+            point.width += mode_defs[mode](1, cols)
+
+        print("chosen_axis")
+        print(chosen_axis)
+        print("^chosen_axis")
+        exit()
+
         point.height -= TILE_OFFSET[0] / DEFAUlT_GRID["rows"]
         point.width -= TILE_OFFSET[1]
         return point
@@ -373,6 +392,7 @@ class MonitorCalculator(FloatUtils):
                     roll_height -= TILE_OFFSET[2]
 
                 rolling_dimension = Location(roll_width, roll_height)
+                true_top_left = self.calc_monitor_offset(rolling_dimension)
                 grid[row][col] = (i, rolling_dimension)
                 i += 1
         return grid
