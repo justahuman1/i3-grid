@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 app_abs_path="/home/sai/Code/temp/quadrant3"
-rofi_command="rofi -theme $app_abs_path/rofi/style_normal.rasi"
+rofi_command="rofi -theme $app_abs_path/rofi/style_normal.rasi -multi-select"
 
 
 # Column and row chooser possibility
@@ -35,11 +35,25 @@ done
 # grid options passed to rofi
 chosen="$(echo -e "$options" | $rofi_command -dmenu -selected-row 0)"
 
-if [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
+# if [[ "$(declare -p chosen)" =~ "declare -a" ]]; then
+
+# IFS=' ' read -ra tst_chosen_arr <<< "$chosen"
+echo ${chosen[*]}
+echo chosen^
+# chosen=(
+#     "poo"
+#     "poo2")
+
+if [ "${#tst_chosen_arr[*]}" -gt "1" ]; then
+    echo "array"
+    exit
+elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     # whatever you want to do when arr doesn't contain value
     echo "Error: Element Out of grid"
     exit
 fi
+echo fail
+exit
 
 # Path to the src python file
 src_file="$app_abs_path/floatwm.py"

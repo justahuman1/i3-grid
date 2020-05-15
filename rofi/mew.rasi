@@ -1,5 +1,6 @@
 configuration {
-    display-drun: "FloatWM";
+    drun-display-format: "{icon} {name}";
+    display-drun: "Apps";
 	show-icons: true;
 	icon-theme: "Papirus-Dark";
 	location: 2;
@@ -8,8 +9,8 @@ configuration {
 	bw: 0;
     fullscreen: true;
     show-icons: true;
-	terminal: "kitty";
-	sidebar-mode: true;
+	terminal: "termite";
+	sidebar-mode: false;
 }
 
 // black version
@@ -21,9 +22,20 @@ configuration {
   txt: #d1d5da;
 }
 
+// white version
+/*
+* {
+  bg: #ffffff;
+  ac: #e5e5e5;
+  ac-txt: #101010;
+  item: #454545;
+  txt: #252525;
+}
+*/
+
 * {
   background-color: rgba(0,0,0,0);
-  font: "Nerd Font 15";
+  font: "FantasqueSansMono Nerd Font 12";
 }
 
 window {
@@ -33,15 +45,11 @@ window {
 
 mainbox {
   children: [ inputbar, listview ];
-  margin: 40% 0% 43% 86%;
-  /* Max height will help large monitor
-  strech prevention Does not apply in rofi config */
-  /* max-height: 10px; */
+  margin: 40% 0% 40% 83%;
   background-color: @bg;
   border-radius: 12;
   border: 2;
   border-color: #ffffff0A;
-  /* padding: 11px; */
 }
 
 listview {
@@ -54,25 +62,25 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  /* padding: 8 12 8 12; */
-  padding: 0 0 6 -5;
+  padding: 8 12 8 12;
   border-radius: 6;
 }
 
 element selected {
-  background-color: rgba(9, 145, 224, 0.4);
+  background-color: @ac;
   border-color: #ffffff0A;
+  text-color: @ac-txt;
   transition: 20;
 }
 
 element-icon {
-  size: 30;
+  size: 60;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
 
 element-icon {
-  size: 30;
+  size: 40;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
@@ -81,24 +89,22 @@ element-text {
   horizontal-align: 0.5;
   vertical-align: 0.5;
   text-color: inherit;
-  /* padding: 10 10 10 10; */
 }
 
 inputbar {
   children: [entry];
-  padding: 4 4 4 4;
-  background-color: #242222;
+  padding: 4 8 4 8;
+  background-color: @bg;
   border: 0 0 1 0;
   border-color: #ffffff0A;
 }
 
 prompt {
-  enabled: true;
+  enabled: false;
 }
 
 entry {
   text-color: @txt;
-  size: 4px;
   padding: 8 12 8 12;
-  font: "Nerd Font 10";
 }
+
