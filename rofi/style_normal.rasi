@@ -23,7 +23,7 @@ configuration {
 
 * {
   background-color: rgba(0,0,0,0);
-  font: "FantasqueSansMono Nerd Font 24";
+  font: "Nerd Font 15";
 }
 
 window {
@@ -33,9 +33,9 @@ window {
 
 mainbox {
   children: [ inputbar, listview ];
-  margin: 37% 0% 37% 80%;
+  margin: 39% 0% 39% 88%;
   /* Max height will help large monitor
-  strech prevention */
+  strech prevention Does not apply in rofi config */
   /* max-height: 10px; */
   background-color: @bg;
   border-radius: 12;
@@ -53,7 +53,7 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  padding: 8 12 8 12;
+  padding: 8 2 8 0;
   border-radius: 6;
 }
 
@@ -64,13 +64,13 @@ element selected {
 }
 
 element-icon {
-  size: 60;
+  size: 30;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
 
 element-icon {
-  size: 40;
+  size: 30;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
@@ -83,8 +83,8 @@ element-text {
 
 inputbar {
   children: [entry];
-  padding: 4 8 4 8;
-  background-color: @bg;
+  padding: 4 4 4 4;
+  background-color: #242222;
   border: 0 0 1 0;
   border-color: #ffffff0A;
 }
@@ -95,5 +95,7 @@ prompt {
 
 entry {
   text-color: @txt;
+  size: 4px;
   padding: 8 12 8 12;
+  font: "Nerd Font 10";
 }
