@@ -177,19 +177,17 @@ class Utils:
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
-        # global DISPLAY_MONITORS, RC_FILE_NAME
         global SNAP_LOCATION, DEFAUlT_GRID
-        # global SNAP_LOCATION
         # TODO - Expose more global fly configs
         r = "rows"
         c = "cols"
         t = "target"
         if r in kwargs and kwargs[r]:
-            DEFAUlT_GRID[r] = kwargs[r]  # or DEFAUlT_GRID[r]
+            DEFAUlT_GRID[r] = kwargs[r]
         if c in kwargs and kwargs[c]:
-            DEFAUlT_GRID[c] = kwargs[c]  # or DEFAUlT_GRID[c]
+            DEFAUlT_GRID[c] = kwargs[c]
         if t in kwargs and kwargs[t]:
-            SNAP_LOCATION = kwargs[t]  # or SNAP_LOCATION
+            SNAP_LOCATION = kwargs[t]
 
 
 class CacheManager:
@@ -224,7 +222,6 @@ class FloatUtils:
             if node["name"] == self.current_display["output"]
         ]
         assert len(wkspc) > 0, "window could not be found"
-        # wkspc = wkspc[0]
         self.iter = 0
         for w in wkspc:
             self.find_focused_window(w)
@@ -375,21 +372,10 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
-        # we call the focused node the target
-        # target_pos = self.get_target(self.focused_node)
-        # Location(width=self.focused_node['rect']['width'],
-        #                       height=self.focused_node['rect']['height'])
-        # print('target:', target_pos)
-
-        # True center (accounting for multiple displays)
+                # True center (accounting for multiple displays)
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
-        true_center = self.get_offset(
-            # window=self.area_matrix[self.workspace_num],
-            # target=target_pos,
-            # rows=2,
-            # cols=2,
-        )
+        true_center = self.get_offset()
         # TODO
         # Apply offset (user preference (due to polybar, etc.))
         # Apply screen offset (XRandr)
@@ -400,8 +386,6 @@ class Movements(MonitorCalculator):
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
         Utils.dispatch_i3msg_com('resize', target_size)
-        print("Resizing...")
-        print(target_size)
 
     def get_target(self, node):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
@@ -416,12 +400,8 @@ class Movements(MonitorCalculator):
         )
         if AUTO_RESIZE:
             self.make_resize()
-            print("Auto resizing bitch")
 
         Utils.dispatch_i3msg_com('move', true_center)
-        # print(self.area_matrix)
-        # print(self.focused_node)
-        # self.area_matrix
 
     def reset_win(self, **kwargs) -> None:
         """Moves to center and applies default tile
