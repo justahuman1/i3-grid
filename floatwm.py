@@ -308,6 +308,7 @@ class MonitorCalculator(FloatUtils):
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
         # if border:
+        # self.
         point.height -= TILE_OFFSET[0] / DEFAUlT_GRID["rows"]
         point.width -= TILE_OFFSET[1]
         return point
@@ -363,7 +364,6 @@ class MonitorCalculator(FloatUtils):
                     )
                     row_match = row_tracker
                     roll_width = 0
-
                 # Offsets
                 # y axis offsets
                 if row == 0:
@@ -375,9 +375,6 @@ class MonitorCalculator(FloatUtils):
                 rolling_dimension = Location(roll_width, roll_height)
                 grid[row][col] = (i, rolling_dimension)
                 i += 1
-        # print("le grid")
-        # print(grid)
-        # print("le grid")
         return grid
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
@@ -459,9 +456,6 @@ class FloatManager(Movements):
         # partitioned for multiple commands
         self.post_commands()
 
-        # 3) Offset override
-        # Utils.offset_override(**kwargs)
-
         if AUTO_FLOAT_CONVERT:
             self.make_float()
             self.post_commands()
@@ -479,7 +473,8 @@ class FloatManager(Movements):
     def run_command(self, cmd, **kwargs):
         if cmd not in self.com_map:
             raise KeyError("No corresponding run command to input:", cmd)
-
+        # Commands that must be refreshed on every action (cheap C socket transfer)
+        self.post_commands()
         self.com_map[cmd](**kwargs)
 
     def post_commands(self):
@@ -487,10 +482,6 @@ class FloatManager(Movements):
         self.workspace_num = self.get_wk_number()
         # Set the focused node
         self.assign_focus_node()
-        # with open('~/tst.json', 'w+') as f:
-        #     f.write(str(self.focused_node))
-        # print(self.focused_node)
-        # exit()
         self.float_grid = self.calculate_grid(
             DEFAUlT_GRID["rows"],
             DEFAUlT_GRID["cols"],
@@ -516,14 +507,15 @@ if __name__ == "__main__":
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
 
+    manager = FloatManager(
+        commands=comx,
+        target=args.target,
+        cols=args.cols,
+        rows=args.rows,
+        perc=args.perc,
+    )
     for action in args.actions:
-        FloatManager(
-            commands=comx,
-            target=args.target,
-            cols=args.cols,
-            rows=args.rows,
-            perc=args.perc,
-        ).run_command(cmd=action)
+        manager.run_command(cmd=action)
 
     end = datetime.datetime.now()
     print("Total Time: ", end - start)
