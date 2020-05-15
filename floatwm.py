@@ -53,6 +53,7 @@ DisplayMap = Dict[int, Location]
 
 # Globals used for config
 AUTO_FLOAT_CONVERT = False
+AUTO_RESIZE = False
 SNAP_LOCATION = 0
 RC_FILE_NAME = "floatrc"
 DEFAUlT_GRID = {"rows": 2, "cols": 2}
@@ -94,6 +95,9 @@ class Utils:
             return i3.move("window", "position", w, h)
         if command == "float":
             return i3.floating("enable")
+        if command == "reset":
+            i3.resize("set", "75ppt", "75ppt")
+            return i3.move("window", " position", "center")
 
     @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
@@ -113,7 +117,7 @@ class Utils:
     def read_config() -> None:
         global DISPLAY_MONITORS, RC_FILE_NAME
         global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
-        global SNAP_LOCATION
+        global SNAP_LOCATION, AUTO_RESIZE
 
         default_locs = [
             f"~/.config/i3float/{RC_FILE_NAME}" f"~/.config/{RC_FILE_NAME}",
@@ -142,13 +146,19 @@ class Utils:
                 "Incorrect floatrc file sytax. Please follow yaml guidelines and example."
             )
 
+        # This turned into a really bad design. I need
+        # to simply keep a global dictionary so we can dynamically
+        # parse the yaml file. I will do this after mvp.
         monitors_yml_key = "DisplayMonitors"
         grid_yml_key = "DefaultGrid"
         auto_yml_key = "AutoConvertToFloat"
+        resize_yml_key = "AutoResize"
         snap_yml_key = "SnapLocation"
         grid_yml_syn = ["Rows", "Columns"]
         settings = config["Settings"]
 
+        if resize_yml_key in settings:
+            AUTO_RESIZE = settings[resize_yml_key]
         if monitors_yml_key in settings:
             DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
         if grid_yml_key in settings:
@@ -277,7 +287,7 @@ class FloatUtils:
         return True
 
     def get_i3_socket(self):
-        socket = i3.Socket()
+        return i3.Socket()
 
 
 class MonitorCalculator(FloatUtils):
@@ -292,9 +302,8 @@ class MonitorCalculator(FloatUtils):
         # 3 if) tensors are intersecting
         display = self.area_matrix[self.workspace_num]
         window = self.get_target(self.focused_node)
-        rows = DEFAUlT_GRID["rows"]
-        cols = DEFAUlT_GRID["cols"]
-        # center = False
+        # rows = DEFAUlT_GRID["rows"]
+        # cols = DEFAUlT_GRID["cols"]
         if center or SNAP_LOCATION == 0:
             # Abs center (2, 2)
             print("xa-Center")
@@ -304,7 +313,12 @@ class MonitorCalculator(FloatUtils):
         else:
             print("Snappin")
             display_offset = target_offset = Location(0, 0)
-            self.calculate_grid(rows, cols, display, window)
+            target = SNAP_LOCATION
+            # y, x adjusted for accessing matrix
+            y, x = self.find_grid_axis()
+            # 1 is the location (0 is the index)
+            return self.float_grid[y][x][1]
+            # self.calculate_grid(rows, cols, display)
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
         # local *centers
@@ -312,8 +326,15 @@ class MonitorCalculator(FloatUtils):
         center_y = display_offset.height - target_offset.height
         return Location(center_x, center_y)
 
-    def calculate_grid(self, rows, cols, display, window):
-        per_quadrant_dim = Location(
+    def find_grid_axis(self):
+        # row, col
+        return divmod(SNAP_LOCATION - 1, DEFAUlT_GRID["cols"])
+
+    def calculate_grid(self, rows, cols, display):
+        # val = CacheManager.get(self.cache_resz)
+        # if val:
+        #     return val
+        self.per_quadrant_dim = Location(
             int(display.width / cols), int(display.height / rows)
         )
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
@@ -324,21 +345,17 @@ class MonitorCalculator(FloatUtils):
             row_tracker = row
             for col in range(len(grid[row])):
                 if row != 0 or col != 0:
-                    roll_width = rolling_dimension.width + per_quadrant_dim.width
+                    roll_width = rolling_dimension.width + self.per_quadrant_dim.width
                 if row_match != row_tracker:
-                    roll_height = rolling_dimension.height+per_quadrant_dim.height
+                    roll_height = (
+                        rolling_dimension.height + self.per_quadrant_dim.height
+                    )
                     row_match = row_tracker
                     roll_width = 0
-                rolling_dimension = Location(
-                    roll_width,
-                    roll_height)
+                rolling_dimension = Location(roll_width, roll_height)
                 grid[row][col] = (i, rolling_dimension)
                 i += 1
-
-        print("[")
-        for i in grid:
-            print(i)
-        print("]")
+        return grid
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
@@ -350,6 +367,9 @@ class MonitorCalculator(FloatUtils):
 class Movements(MonitorCalculator):
     def __init__(self,):
         super().__init__()
+        # Contains all the cache keys for movements
+        self.cache_resz = "quadrant_loc"
+        self.cache_monitor_grid = "monitor_grid"
 
     def move_to_center(self, **kwargs) -> None:
         """Moves the focused window to
@@ -378,7 +398,10 @@ class Movements(MonitorCalculator):
         Utils.dispatch_i3msg_com(command="move", data=true_center)
 
     def make_resize(self, **kwargs):
+        target_size = self.per_quadrant_dim
+        Utils.dispatch_i3msg_com('resize', target_size)
         print("Resizing...")
+        print(target_size)
 
     def get_target(self, node):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
@@ -387,25 +410,23 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the target (default: 0) position in
         current grid (default: 2*2)"""
-        # global DEFAUlT_GRID, SNAP_LOCATION
-        # print(DEFAUlT_GRID, SNAP_LOCATION)
         target_pos = self.get_target(self.focused_node)
-        # print(target_pos)
-        # print("target_pos")
         true_center = self.get_offset(
-            # window=self.area_matrix[self.workspace_num],
-            # target=target_pos,
-            # rows=DEFAUlT_GRID["rows"],
-            # cols=DEFAUlT_GRID["cols"],
             center=False,
         )
+        if AUTO_RESIZE:
+            self.make_resize()
+            print("Auto resizing bitch")
 
-        # print("====")
-        # print(true_center)
-        # print("====")
+        Utils.dispatch_i3msg_com('move', true_center)
         # print(self.area_matrix)
         # print(self.focused_node)
         # self.area_matrix
+
+    def reset_win(self, **kwargs) -> None:
+        """Moves to center and applies default tile
+        to float properties (center, 75ppt)"""
+        Utils.dispatch_i3msg_com(command='reset')
 
     def make_float(self, **kwargs) -> None:
         """Moves the current window into float mode
@@ -427,6 +448,11 @@ class FloatManager(Movements):
         self.workspace_num = self.get_wk_number()
         # Set the focused node
         self.assign_focus_node()
+        self.float_grid = self.calculate_grid(
+            DEFAUlT_GRID["rows"],
+            DEFAUlT_GRID["cols"],
+            self.area_matrix[self.workspace_num],
+        )
 
         if AUTO_FLOAT_CONVERT:
             self.make_float()
@@ -435,6 +461,7 @@ class FloatManager(Movements):
             self.make_float,
             self.make_resize,
             self.snap_to_grid,
+            self.reset_win,
         ]
         self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
 
@@ -469,6 +496,5 @@ if __name__ == "__main__":
         )
         manager.run_command(cmd=action)
     end = datetime.datetime.now()
-    print('Total Time: ', end-start)
+    print("Total Time: ", end - start)
     exit(0)
-

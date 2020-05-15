@@ -64,7 +64,8 @@ class Documentation:
             "center": "Center the focused window to a float window",
             "float": "Toggle the float of a window (overrides config file for otf movements)",
             "resize": "Resize focused window (if float)",
-            "snap": "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target.",
+            "snap": "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target",
+            "reset": "Resets the focused window into the middle occupying 75ppt screen space (i3 default)",
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"The number of {ax} slices in screen grid {_rc_def}"

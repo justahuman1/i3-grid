@@ -33,10 +33,16 @@ Settings:
     # Name of your monitor as recorded by 'i3-msg -t get_outputs'
     # Exclude root displays (ex: xroot-0)
     DisplayMonitors:
+        # An array of monitor displays this script
+        # will observe when ran (ignores other screens).
+        # You should probably put all monitors unless
+        # you know what you are doing.
         - "eDP1"
         - "HDMI1"
         - "VGA"
     DefaultGrid:
+        # These are the only two grid attributes
+        # int
         Rows: 3
         Columns: 3
 
@@ -45,6 +51,14 @@ Settings:
     # convert to float without prompt.
     # boolean: true/false
     AutoConvertToFloat: false
+
+    # If auto resize is true, snapping a window to
+    # the target value in the grid will resize it
+    # to fit proportional to the grid quadrant.
+    # Can be overridden on the fly (call resize
+    # function manually)
+    # boolean: true/false
+    AutoResize: false
 
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.
