@@ -14,14 +14,14 @@ grid=(
     3   # Swap due to rofi options folding
     2
     4
-    0
     "L" # Left
-    "R" # Right
     "T" # Top
+    "R" # Right
     "B" # Bottom
     "C" # Center (75% screen)
     "X" # Custom row, col, target parsing
-    "P" # Custom Percentage, center window
+    "P" # Custom Percentage, center window (ofc, you can override otf)
+    0
 )
 # Without the swap, we can make it dynamic and allow on the fly
 # grids. We need to change our python library to adjust for this.

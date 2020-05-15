@@ -306,7 +306,7 @@ class MonitorCalculator(FloatUtils):
         # TODO
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
-        # if snap and border, apply full offset
+        # if snap and border, apply full offset > + | -
         # if border:
         point.height -= TILE_OFFSET[0]/DEFAUlT_GRID['rows']
         point.width -= TILE_OFFSET[1]
@@ -411,10 +411,6 @@ class Movements(MonitorCalculator):
 
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
-        print("MOOO")
-        print(target_size)
-        print("MOOO")
-        exit()
         Utils.dispatch_i3msg_com("resize", target_size)
 
     def custom_resize(self, **kwargs):
