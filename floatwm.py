@@ -58,6 +58,7 @@ SNAP_LOCATION = 0
 CUSTOM_PERCENTAGE = 50
 RC_FILE_NAME = "floatrc"
 DEFAUlT_GRID = {"rows": 2, "cols": 2}
+TILE_OFFSET = [0, 0, 0, 0]
 DISPLAY_MONITORS = {
     "eDP1",
     "HDMI1",
@@ -201,6 +202,9 @@ class Utils:
             SNAP_LOCATION = kwargs[t]
         if p in kwargs and kwargs[p]:
             CUSTOM_PERCENTAGE = kwargs[p]
+
+    @staticmethod
+    def offset_override(**kwargs):
 
 
 class FloatUtils:
@@ -418,6 +422,9 @@ class FloatManager(Movements):
         Utils.read_config()
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
+        # 3) Offset override
+        Utils.offset_override(**kwargs)
+
         # Run initalizing commands
         # partitioned for multiple commands
         self.post_commands()
