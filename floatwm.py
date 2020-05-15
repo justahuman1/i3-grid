@@ -299,26 +299,22 @@ class MonitorCalculator(FloatUtils):
         # 3 if) tensors are intersecting
         display = self.area_matrix[self.workspace_num]
         window = self.get_target(self.focused_node)
-        # rows = DEFAUlT_GRID["rows"]
-        # cols = DEFAUlT_GRID["cols"]
         if center or SNAP_LOCATION == 0:
             # Abs center (2, 2)
-            print("xa-Center")
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
             )
         else:
-            print("Snappin")
             display_offset = target_offset = Location(0, 0)
             target = SNAP_LOCATION
             # y, x adjusted for accessing matrix
             y, x = self.find_grid_axis()
             # 1 is the location (0 is the index)
             return self.float_grid[y][x][1]
-            # self.calculate_grid(rows, cols, display)
+
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
-        # local *centers
+        # local *centers (not abs)
         center_x = display_offset.width - target_offset.width
         center_y = display_offset.height - target_offset.height
         return Location(center_x, center_y)
