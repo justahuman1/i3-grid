@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pickle
+import datetime
 import argparse
 import os
 import subprocess
@@ -293,39 +294,51 @@ class MonitorCalculator(FloatUtils):
         window = self.get_target(self.focused_node)
         rows = DEFAUlT_GRID["rows"]
         cols = DEFAUlT_GRID["cols"]
-        center = False
+        # center = False
         if center or SNAP_LOCATION == 0:
+            # Abs center (2, 2)
+            print("xa-Center")
             display_offset, target_offset = self.get_matrix_center(
-                rows, cols, display, window
+                2, 2, display, window
             )
         else:
+            print("Snappin")
+            display_offset = target_offset = Location(0, 0)
             self.calculate_grid(rows, cols, display, window)
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
         # local *centers
-        # center_x = display_offset.width - target_offset.width
-        # center_y = display_offset.height - target_offset.height
-        # return Location(center_x, center_y)
+        center_x = display_offset.width - target_offset.width
+        center_y = display_offset.height - target_offset.height
+        return Location(center_x, center_y)
 
     def calculate_grid(self, rows, cols, display, window):
-        print(f"grid rows: {rows}")
-        print(f"grid cols: {cols}")
-        print(f"window: {window}")
-        print(f"display: {display}")
-        per_quadrant_dim = Location(int(display.width/cols), int(display.height/rows))
-        # print('per quad:', per_quadrant_dim)
+        per_quadrant_dim = Location(
+            int(display.width / cols), int(display.height / rows)
+        )
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
         i = 1
+        rolling_dimension = Location(0, 0)
+        row_match = roll_width = roll_height = 0
         for row in range(len(grid)):
+            row_tracker = row
             for col in range(len(grid[row])):
-                grid[row][col] = (i, Location(
-                    ))
+                if row != 0 or col != 0:
+                    roll_width = rolling_dimension.width + per_quadrant_dim.width
+                if row_match != row_tracker:
+                    roll_height = rolling_dimension.height+per_quadrant_dim.height
+                    row_match = row_tracker
+                    roll_width = 0
+                rolling_dimension = Location(
+                    roll_width,
+                    roll_height)
+                grid[row][col] = (i, rolling_dimension)
                 i += 1
-        # print(per_quadrant_dim)
 
-        print(grid)
-
-
+        print("[")
+        for i in grid:
+            print(i)
+        print("]")
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
@@ -444,6 +457,7 @@ if __name__ == "__main__":
         debugger()
         exit(0)
 
+    start = datetime.datetime.now()
     doc = Documentation()
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
@@ -454,5 +468,7 @@ if __name__ == "__main__":
             commands=comx, target=args.target, cols=args.cols, rows=args.rows
         )
         manager.run_command(cmd=action)
+    end = datetime.datetime.now()
+    print('Total Time: ', end-start)
+    exit(0)
 
-    exit(1)

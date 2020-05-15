@@ -38,11 +38,11 @@ class Unit:
 
 # Cache Test
 class CacheTest:
-    def __init__(self, ):
+    def __init__(self,):
         super().__init__()
 
-    def read_file(self, ):
-        print(floatwm.CacheManager().get('key'))
+    def read_file(self,):
+        print(floatwm.CacheManager().get("key"))
 
 
 # FloatManager Test
@@ -85,6 +85,18 @@ def metadata_test():
     # total_size, active_monitor = util.calc_metadata()
     print(util.area_matrix)
     print(util.current_display)
+
+
+class IntegrationTests:
+    def __init__(self, ):
+        super().__init__()
+
+    def map_command_chain(self,):
+        comx = [
+            'float',
+            'center',
+            'snap'
+        ]
 
 
 # TODO - Add commands to dictionary and consider pytest
