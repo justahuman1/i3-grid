@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 app_abs_path="/home/sai/Code/temp/quadrant3"
+# Set rofi env vars for rasi config
+# Corresponds to grid numbers..
+export COLS=2
+export LINES=2
 rofi_command="rofi -theme $app_abs_path/rofi/style_normal.rasi -multi-select"
+
 
 
 # Column and row chooser possibility
@@ -9,6 +14,9 @@ rofi_command="rofi -theme $app_abs_path/rofi/style_normal.rasi -multi-select"
 
 join() { local IFS="$1"; shift; echo "$*"; }
 
+# We can use a python function to dynamically generate the
+# grid for different canvases on the fly. Or maybe a small
+# awk code to swap every non != len(lines) number.
 grid=(
     1
     3   # Swap due to rofi options folding
@@ -34,18 +42,15 @@ done
 
 # grid options passed to rofi
 chosen="$(echo -e "$options" | $rofi_command -dmenu -selected-row 0)"
+len=${#chosen}
 
-# if [[ "$(declare -p chosen)" =~ "declare -a" ]]; then
+if [[ "$len" -gt "1" ]]; then
+    # if multi select
 
-# IFS=' ' read -ra tst_chosen_arr <<< "$chosen"
-echo ${chosen[*]}
-echo chosen^
-# chosen=(
-#     "poo"
-#     "poo2")
+    arr=$(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}')
+    echo "arr:${arr[*]}"
 
-if [ "${#tst_chosen_arr[*]}" -gt "1" ]; then
-    echo "array"
+    # ; print a[0]}'
     exit
 elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     # whatever you want to do when arr doesn't contain value
