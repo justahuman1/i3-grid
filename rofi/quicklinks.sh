@@ -47,10 +47,16 @@ len=${#chosen}
 if [[ "$len" -gt "1" ]]; then
     # if multi select
 
+    # parse rofi multiselect
     arr=$(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}')
     echo "arr:${arr[*]}"
+    echo "la len:$len"
+    if [ "$len" == "3" ]; then
+        echo "Threeing huh"
+    elif [ "$len" == "7" ]; then
+        echo "Full screen?"
+    fi
 
-    # ; print a[0]}'
     exit
 elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     # whatever you want to do when arr doesn't contain value
