@@ -345,7 +345,7 @@ class MonitorCalculator(FloatUtils):
 
             # if cur_axis[0] == 1 and cur_axis[1] == 1:
             #     t_h +=  mode_defs[mode](0)
-            if cur_axis[1] == 0:  # Top
+            if cur_axis[1] == 0:  # Top Left
                 t_h += mode_defs[mode](0)
             # if cur_axis[0] == cols - 1:  # Right Side
             #     t_w -= mode_defs[mode](1)
@@ -362,9 +362,21 @@ class MonitorCalculator(FloatUtils):
                 print("Booty")
                 print(cur_axis)
 
-            if cur_axis[0] == (cols-1) and  cur_axis[1] == (rows-1):
+            if cur_axis[0] == (cols-1) and  cur_axis[1] == 0:
+                # Top Right
+                print("BUttcheck")
+                # exit()
                 t_h += mode_defs[mode](0)
                 t_w += mode_defs[mode](3)
+
+            if cur_axis[0] == (cols-1) and  cur_axis[1] == (rows-1):
+                # Bottom right
+                t_h += mode_defs[mode](0)
+                t_w += mode_defs[mode](3)
+
+            # Center pieces
+            if 0 < cur_axis[1] < rows - 1 and  0 < cur_axis[0] < cols - 1:
+                t_w -= mode_defs[mode](3)
 
         return Location(t_w, t_h)
 
