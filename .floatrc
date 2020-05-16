@@ -51,10 +51,10 @@ Settings:
         # Offset from top, right, bottom, left (in order)
         # This format is similar to CSS
         # Units: pixels {int}
-        - 20 # Top
-        - 10 #
-        - 20
-        - 10
+        - 10 # Top
+        - 0 # Right
+        - 10 # Bottom
+        - 0 # Left
 
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.

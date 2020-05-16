@@ -300,8 +300,9 @@ class FloatUtils:
 class MonitorCalculator(FloatUtils):
     def __init__(self,):
         super().__init__()
+        self.cache_grid = None
 
-    def calc_monitor_offset(self, mode: str, point: Location) -> Location:
+    def calc_monitor_offset(self, mode: str, point: Location, loc: int = None) -> Location:
         rows = DEFAUlT_GRID["rows"]
         cols = DEFAUlT_GRID["cols"]
         assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
@@ -312,32 +313,35 @@ class MonitorCalculator(FloatUtils):
         # if border:
         mode_defs = {
             "snap": lambda *d: TILE_OFFSET[d[0]],
-            "resize": lambda *xy: int(TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[0]]/(xy[1] or 1)),
-        }
-        m2_degs = {
-            "snap": lambda *f: int(f[0]/DEFAUlT_GRID[f[1]]),
-            "resize": lambda *xy: int(TILE_OFFSET[xy[0]]),
+            "resize": lambda *xy: int(
+                TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[1]] / (xy[2] or 1)
+            ),
         }
 
         chosen_axis = self.find_grid_axis()
+        cur_axis = self.find_grid_axis(loc=loc)
         t_h = point.height
         t_w = point.width
         print(f"=========CHOSEN AXIS: {chosen_axis} =========")
         print("Mode:", mode)
         print("Point:", point)
-        if chosen_axis[0] == 0 and mode == "snap":  # row top
-            t_h += mode_defs[mode](0, "rows")
-            # print('in 1')
-        if chosen_axis[1] == 0 and mode == "snap":  # left offset
-            t_w += mode_defs[mode](3, "cols")
-            # print('in 2')
-        if chosen_axis[0] == rows - 1 and mode == "resize":  # row bottom
-            t_h -= mode_defs[mode](2, rows-1 )
-            # print('in 3')
-        if chosen_axis[1] == cols - 1 and mode == "resize":  # right offset
-            t_w -= mode_defs[mode](1, cols-1 )
-            # print('in 4')
-        print("Out:", t_w, t_h)
+        if mode == "resize":
+            return Location(
+                t_h - mode_defs[mode](0, 2, cols), t_w - mode_defs[mode](1, 3, cols)
+            )
+        # if chosen_axis[0] == 0 and mode == "snap":  # row top
+        #     t_h += mode_defs[mode](0, "rows")
+        #     # print('in 1')
+        # if chosen_axis[1] == 0 and mode == "snap":  # left offset
+        #     t_w += mode_defs[mode](3, "cols")
+        #     # print('in 2')
+        # if chosen_axis[0] == rows - 1 and mode == "resize":  # row bottom
+        #     t_h -= mode_defs[mode](2, rows-1 )
+        #     # print('in 3')
+        # if chosen_axis[1] == cols - 1 and mode == "resize":  # right offset
+        #     t_w -= mode_defs[mode](1, cols-1 )
+        #     # print('in 4')
+        # print("Out:", t_w, t_h)
 
         return Location(t_w, t_h)
 
@@ -369,11 +373,13 @@ class MonitorCalculator(FloatUtils):
         center_y = display_offset.height - target_offset.height
         return Location(center_x, center_y)
 
-    def find_grid_axis(self):
+    def find_grid_axis(self, loc: int = SNAP_LOCATION - 1):
         # row, col
-        return divmod(SNAP_LOCATION - 1, DEFAUlT_GRID["cols"])
+        return divmod(loc, DEFAUlT_GRID["cols"])
 
     def calculate_grid(self, rows, cols, display):
+        if self.cache_grid:
+            return self.cache_grid
         main_loc = Location(int(display.width / cols), int(display.height / rows))
         # Account for window size offset (grid quadrant size - offset/(rows | cols))
         self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
@@ -393,18 +399,16 @@ class MonitorCalculator(FloatUtils):
                     )
                     row_match = row_tracker
                     roll_width = 0
-                # Offsets
-                # y axis offsets
-                if row == 0:
-                    roll_height += TILE_OFFSET[0]
-                elif row == len(grid) - 1:
-                    roll_height -= TILE_OFFSET[2]
 
                 rolling_dimension = Location(roll_width, roll_height)
-                true_top_left = self.calc_monitor_offset("snap", rolling_dimension)
+                true_top_left = self.calc_monitor_offset("snap", rolling_dimension, loc=i)
                 grid[row][col] = (i, true_top_left)
                 i += 1
+        self.cache_grid = self.overlay_offset_grid(grid)
         return grid
+
+    def overlay_offset_grid(self, grid: Location) -> Location:
+        pass
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
