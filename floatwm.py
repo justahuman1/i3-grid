@@ -108,8 +108,6 @@ class Utils:
         elif isinstance(data, Location):
             w = str(data.width) if data.width > 0 else "0"
             h = str(data.height) if data.height > 0 else "0"
-            print("In here duh")
-            print(data)
             dispatcher[command](w, h)
 
     @staticmethod
@@ -301,8 +299,14 @@ class MonitorCalculator(FloatUtils):
     def __init__(self,):
         super().__init__()
         self.cache_grid = None
+        self.cache_resz = None
 
-    def calc_monitor_offset(self, mode: str, point: Location, loc: int = None) -> Location:
+    def calc_monitor_offset(
+        self, mode: str, point: Location, loc: int = None
+    ) -> Location:
+        if self.cache_resz and mode == "resize":
+            return self.cache_resz
+
         rows = DEFAUlT_GRID["rows"]
         cols = DEFAUlT_GRID["cols"]
         assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
@@ -314,34 +318,53 @@ class MonitorCalculator(FloatUtils):
         mode_defs = {
             "snap": lambda *d: TILE_OFFSET[d[0]],
             "resize": lambda *xy: int(
-                TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[1]] / (xy[2] or 1)
+                (TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[1]]) / (xy[2] or 1)
             ),
         }
-
+        # [x, y] axis of grid index
         chosen_axis = self.find_grid_axis()
         cur_axis = self.find_grid_axis(loc=loc)
         t_h = point.height
         t_w = point.width
-        print(f"=========CHOSEN AXIS: {chosen_axis} =========")
-        print("Mode:", mode)
-        print("Point:", point)
+        # print(f"=========CHOSEN AXIS: {chosen_axis} =========")
+        # print("Mode:", mode)
+        # print("Point:", point)
         if mode == "resize":
-            return Location(
-                t_h - mode_defs[mode](0, 2, cols), t_w - mode_defs[mode](1, 3, cols)
+            self.cache_resz = Location(
+                t_w - mode_defs[mode](1, 3, cols),
+                t_h - mode_defs[mode](0, 2, cols),
             )
-        # if chosen_axis[0] == 0 and mode == "snap":  # row top
-        #     t_h += mode_defs[mode](0, "rows")
-        #     # print('in 1')
-        # if chosen_axis[1] == 0 and mode == "snap":  # left offset
-        #     t_w += mode_defs[mode](3, "cols")
-        #     # print('in 2')
-        # if chosen_axis[0] == rows - 1 and mode == "resize":  # row bottom
-        #     t_h -= mode_defs[mode](2, rows-1 )
-        #     # print('in 3')
-        # if chosen_axis[1] == cols - 1 and mode == "resize":  # right offset
-        #     t_w -= mode_defs[mode](1, cols-1 )
-        #     # print('in 4')
-        # print("Out:", t_w, t_h)
+            return self.cache_resz
+        elif mode == "snap":
+            move_up_amt = TILE_OFFSET[0] - TILE_OFFSET[2]
+            # if 0 <= cur_axis[1] <= rows -1: # Top & Bottom
+            #     t_h += move_up_amt/2
+            # if 0 <= cur_axis[0] <= rows -1: # Right & Left
+            #     t_w -= mode_defs[mode](1)
+            #     t_w += mode_defs[mode](3)
+
+            # if cur_axis[0] == 1 and cur_axis[1] == 1:
+            #     t_h +=  mode_defs[mode](0)
+            if cur_axis[1] == 0:  # Top
+                t_h += mode_defs[mode](0)
+            # if cur_axis[0] == cols - 1:  # Right Side
+            #     t_w -= mode_defs[mode](1)
+            # if cur_axis[1] == rows - 1:  # Bottom
+            #     t_h -= mode_defs[mode](2)
+            if cur_axis[0] == 0:  # Left side
+                t_w += mode_defs[mode](3)
+
+            # # Catch all in betweeners
+            if 0 < cur_axis[1] < rows - 1:
+                t_h += mode_defs[mode](0)
+            if 0 < cur_axis[0] < cols - 1:
+                t_w -= mode_defs[mode](0)
+                print("Booty")
+                print(cur_axis)
+
+            if cur_axis[0] == (cols-1) and  cur_axis[1] == (rows-1):
+                t_h += mode_defs[mode](0)
+                t_w += mode_defs[mode](3)
 
         return Location(t_w, t_h)
 
@@ -373,9 +396,10 @@ class MonitorCalculator(FloatUtils):
         center_y = display_offset.height - target_offset.height
         return Location(center_x, center_y)
 
-    def find_grid_axis(self, loc: int = SNAP_LOCATION - 1):
+    def find_grid_axis(self, loc: int = None):
         # row, col
-        return divmod(loc, DEFAUlT_GRID["cols"])
+        loc = loc or SNAP_LOCATION
+        return divmod(loc - 1, DEFAUlT_GRID["cols"])
 
     def calculate_grid(self, rows, cols, display):
         if self.cache_grid:
@@ -383,7 +407,6 @@ class MonitorCalculator(FloatUtils):
         main_loc = Location(int(display.width / cols), int(display.height / rows))
         # Account for window size offset (grid quadrant size - offset/(rows | cols))
         self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
-        print("Resizing mainloc")
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
         i = 1
         rolling_dimension = Location(0, 0)
@@ -401,7 +424,9 @@ class MonitorCalculator(FloatUtils):
                     roll_width = 0
 
                 rolling_dimension = Location(roll_width, roll_height)
-                true_top_left = self.calc_monitor_offset("snap", rolling_dimension, loc=i)
+                true_top_left = self.calc_monitor_offset(
+                    "snap", rolling_dimension, loc=i
+                )
                 grid[row][col] = (i, true_top_left)
                 i += 1
         self.cache_grid = self.overlay_offset_grid(grid)
@@ -421,7 +446,6 @@ class Movements(MonitorCalculator):
     def __init__(self,):
         super().__init__()
         # Contains all the cache keys for movements
-        self.cache_resz = "quadrant_loc"
         self.cache_monitor_grid = "monitor_grid"
 
     def move_to_center(self, **kwargs) -> None:
@@ -441,7 +465,6 @@ class Movements(MonitorCalculator):
 
     def make_resize(self, **kwargs):
         target_size = self.per_quadrant_dim
-        print("Le target size:", self.per_quadrant_dim)
         Utils.dispatch_i3msg_com("resize", data=target_size)
 
     def custom_resize(self, **kwargs):
@@ -460,8 +483,6 @@ class Movements(MonitorCalculator):
             self.make_resize()
             self.post_commands()
 
-        print("Le snap:")
-        print(SNAP_LOCATION)
         Utils.dispatch_i3msg_com("move", true_center)
 
     def reset_win(self, **kwargs) -> None:

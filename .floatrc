@@ -51,9 +51,9 @@ Settings:
         # Offset from top, right, bottom, left (in order)
         # This format is similar to CSS
         # Units: pixels {int}
-        - 10 # Top
+        - 20 # Top
         - 0 # Right
-        - 10 # Bottom
+        - 20 # Bottom
         - 0 # Left
 
     # Default location to snap window to (if not given on the fly)
