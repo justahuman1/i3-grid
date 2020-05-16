@@ -322,6 +322,9 @@ class MonitorCalculator(FloatUtils):
         chosen_axis = self.find_grid_axis()
         t_h = point.height
         t_w = point.width
+        print(f"=========CHOSEN AXIS: {chosen_axis} =========")
+        print("Mode:", mode)
+        print("Point:", point)
         if chosen_axis[0] == 0 and mode == "snap":  # row top
             t_h += mode_defs[mode](0, "rows")
             # print('in 1')
@@ -331,9 +334,10 @@ class MonitorCalculator(FloatUtils):
         if chosen_axis[0] == rows - 1 and mode == "resize":  # row bottom
             t_h -= mode_defs[mode](2, rows-1 )
             # print('in 3')
-        if chosen_axis[1] == cols and mode == "resize":  # right offset
+        if chosen_axis[1] == cols - 1 and mode == "resize":  # right offset
             t_w -= mode_defs[mode](1, cols-1 )
             # print('in 4')
+        print("Out:", t_w, t_h)
 
         return Location(t_w, t_h)
 
@@ -373,6 +377,7 @@ class MonitorCalculator(FloatUtils):
         main_loc = Location(int(display.width / cols), int(display.height / rows))
         # Account for window size offset (grid quadrant size - offset/(rows | cols))
         self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
+        print("Resizing mainloc")
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
         i = 1
         rolling_dimension = Location(0, 0)
@@ -397,7 +402,7 @@ class MonitorCalculator(FloatUtils):
 
                 rolling_dimension = Location(roll_width, roll_height)
                 true_top_left = self.calc_monitor_offset("snap", rolling_dimension)
-                grid[row][col] = (i, rolling_dimension)
+                grid[row][col] = (i, true_top_left)
                 i += 1
         return grid
 

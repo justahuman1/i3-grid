@@ -39,8 +39,6 @@ configuration {
 	terminal: "kitty";
 	sidebar-mode: true;
 }
-
-// black version
 * {
   bg: #000000;
   ac: #869fa214;
@@ -48,17 +46,14 @@ configuration {
   item: #bdc3c3;
   txt: #d1d5da;
 }
-
 * {
   background-color: rgba(0,0,0,0);
   font: "Nerd Font 15";
 }
-
 window {
   transparency: "real";
   fullscreen: true;
 }
-
 mainbox {
   children: [ inputbar, listview ];
   margin: 40% 0.3% 43% 90%;
@@ -71,14 +66,12 @@ mainbox {
   border-color: #ffffff0A;
   /* padding: 11px; */
 }
-
 listview {
   columns: ${COLS};
   lines: ${LINES};
   padding: 8;
   spacing: 0;
 }
-
 element {
   border: 1;
   text-color: @item;
@@ -87,32 +80,27 @@ element {
   padding: 0 0 6 -6;
   border-radius: 6;
 }
-
 element selected {
   background-color: rgba(9, 145, 224, 0.4);
   border-color: #ffffff0A;
   transition: 20;
 }
-
 element-icon {
   size: 30;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
-
 element-icon {
   size: 30;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
-
 element-text {
   horizontal-align: 0.5;
   vertical-align: 2.5;
   text-color: inherit;
   /* padding: 10 10 10 10; */
 }
-
 inputbar {
   children: [entry];
   padding: 4 4 4 4;
@@ -120,11 +108,9 @@ inputbar {
   border: 0 0 1 0;
   border-color: #ffffff0A;
 }
-
 prompt {
   enabled: true;
 }
-
 entry {
   text-color: @txt;
   size: 4px;
