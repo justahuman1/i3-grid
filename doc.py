@@ -84,6 +84,7 @@ class Documentation:
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"The number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
+        _ova = lambda auto: f"Override auto {auto} on the fly {{bool}}"
         self.flags = {
             "rows": {"type": "int", "help": _slc_txt("row")},
             "cols": {"type": "int", "help": _slc_txt("col")},
@@ -95,6 +96,8 @@ class Documentation:
                 "type": "int",
                 "help": f"The grid location to snap the window to {_rc_def}",
             },
+            "noresize": {"type": "bool", "help": _ova("resize")},
+            "nofloat": {"type": "bool", "help": _ova("float")},
         }
 
     def build_parser(self, choices: list) -> ArgumentParser:

@@ -197,12 +197,14 @@ class Utils:
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
         global SNAP_LOCATION, DEFAUlT_GRID
-        global CUSTOM_PERCENTAGE
-        # TODO - Expose more global fly configs
+        global CUSTOM_PERCENTAGE, AUTO_RESIZE
+        global AUTO_FLOAT_CONVERT
         r = "rows"
         c = "cols"
         t = "target"
         p = "perc"
+        nr = "noresize"
+        nf = "nofloat"
         if r in kwargs and kwargs[r]:
             DEFAUlT_GRID[r] = kwargs[r]
         if c in kwargs and kwargs[c]:
@@ -211,6 +213,10 @@ class Utils:
             SNAP_LOCATION = kwargs[t]
         if p in kwargs and kwargs[p]:
             CUSTOM_PERCENTAGE = kwargs[p]
+        if nr in kwargs and kwargs[nr]:
+            AUTO_RESIZE = not kwargs[nr]
+        if nf in kwargs and kwargs[nf]:
+            AUTO_FLOAT_CONVERT = not kwargs[nf]
 
 
 class FloatUtils:
@@ -450,10 +456,6 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the target (default: 0) position in
         current grid (default: 2*2)"""
-        if AUTO_RESIZE:
-            self.make_resize()
-            # Resync to state
-            self.post_commands()
         target_pos = self.get_target(self.focused_node)
         true_center = self.get_offset(center=False,)
 
@@ -486,6 +488,10 @@ class FloatManager(Movements):
         self.post_commands()
         if AUTO_FLOAT_CONVERT:
             self.make_float()
+            # Resync to state
+            self.post_commands()
+        if AUTO_RESIZE:
+            self.make_resize()
             # Resync to state
             self.post_commands()
 
@@ -536,13 +542,12 @@ if __name__ == "__main__":
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
-
+    # Manager can simply be an unpacker
+    # to args, rather than manual
+    # seralizing into kwargs.
     manager = FloatManager(
         commands=comx,
-        target=args.target,
-        cols=args.cols,
-        rows=args.rows,
-        perc=args.perc,
+        **args.__dict__,
     )
     for action in args.actions:
         manager.run_command(cmd=action)
