@@ -312,11 +312,11 @@ class MonitorCalculator(FloatUtils):
         # if border:
         mode_defs = {
             "snap": lambda *d: TILE_OFFSET[d[0]],
-            "resize": lambda *xy: int(TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[0]]/xy[1]),
+            "resize": lambda *xy: int(TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[0]]/(xy[1] or 1)),
         }
         m2_degs = {
             "snap": lambda *f: int(f[0]/DEFAUlT_GRID[f[1]]),
-            "resize": lambda *xy: int( TILE_OFFSET[xy[0]] ),
+            "resize": lambda *xy: int(TILE_OFFSET[xy[0]]),
         }
 
         chosen_axis = self.find_grid_axis()
@@ -329,10 +329,10 @@ class MonitorCalculator(FloatUtils):
             t_w += mode_defs[mode](3, "cols")
             # print('in 2')
         if chosen_axis[0] == rows - 1 and mode == "resize":  # row bottom
-            t_h -= mode_defs[mode](2, rows-1 or 1)
+            t_h -= mode_defs[mode](2, rows-1 )
             # print('in 3')
         if chosen_axis[1] == cols and mode == "resize":  # right offset
-            t_w -= mode_defs[mode](1, cols-1 or 1)
+            t_w -= mode_defs[mode](1, cols-1 )
             # print('in 4')
 
         return Location(t_w, t_h)
