@@ -104,6 +104,7 @@ if [[ "$len" -gt "1" ]]; then
 elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     # whatever you want to do when arr doesn't contain value
     echo "Error: Element Out of grid"
+    python $src_file -h
     exit
 fi
 

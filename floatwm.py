@@ -68,7 +68,6 @@ DISPLAY_MONITORS = {
 }
 
 # TODO: handle multiple monitor (behind summation) offset
-# TODO: add grid options
 
 
 class Utils:
@@ -310,7 +309,6 @@ class MonitorCalculator(FloatUtils):
         rows = DEFAUlT_GRID["rows"]
         cols = DEFAUlT_GRID["cols"]
         assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
-        # TODO
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
@@ -326,57 +324,17 @@ class MonitorCalculator(FloatUtils):
         cur_axis = self.find_grid_axis(loc=loc)
         t_h = point.height
         t_w = point.width
-        # print(f"=========CHOSEN AXIS: {chosen_axis} =========")
-        # print("Mode:", mode)
-        # print("Point:", point)
         if mode == "resize":
             self.cache_resz = Location(
-                t_w - mode_defs[mode](1, 3, cols),
-                t_h - mode_defs[mode](0, 2, cols),
+                t_w - mode_defs[mode](1, 3, cols), t_h - mode_defs[mode](0, 2, cols),
             )
             return self.cache_resz
         elif mode == "snap":
-            move_up_amt = TILE_OFFSET[0] - TILE_OFFSET[2]
-            # if 0 <= cur_axis[1] <= rows -1: # Top & Bottom
-            #     t_h += move_up_amt/2
-            # if 0 <= cur_axis[0] <= rows -1: # Right & Left
-            #     t_w -= mode_defs[mode](1)
-            #     t_w += mode_defs[mode](3)
-
-            # if cur_axis[0] == 1 and cur_axis[1] == 1:
-            #     t_h +=  mode_defs[mode](0)
-            if cur_axis[1] == 0:  # Top Left
-                t_h += mode_defs[mode](0)
-            # if cur_axis[0] == cols - 1:  # Right Side
-            #     t_w -= mode_defs[mode](1)
-            # if cur_axis[1] == rows - 1:  # Bottom
-            #     t_h -= mode_defs[mode](2)
-            if cur_axis[0] == 0:  # Left side
-                t_w += mode_defs[mode](3)
-
-            # # Catch all in betweeners
-            if 0 < cur_axis[1] < rows - 1:
-                t_h += mode_defs[mode](0)
-            if 0 < cur_axis[0] < cols - 1:
-                t_w -= mode_defs[mode](0)
-                print("Booty")
-                print(cur_axis)
-
-            if cur_axis[0] == (cols-1) and  cur_axis[1] == 0:
-                # Top Right
-                print("BUttcheck")
-                # exit()
-                t_h += mode_defs[mode](0)
-                t_w += mode_defs[mode](3)
-
-            if cur_axis[0] == (cols-1) and  cur_axis[1] == (rows-1):
-                # Bottom right
-                t_h += mode_defs[mode](0)
-                t_w += mode_defs[mode](3)
-
-            # Center pieces
-            if 0 < cur_axis[1] < rows - 1 and  0 < cur_axis[0] < cols - 1:
-                t_w -= mode_defs[mode](3)
+            per_offset = [int(i / 2) for i in TILE_OFFSET]
+            return Location(
+                width=sum([per_offset[1], per_offset[3]]),
+                height=sum([per_offset[0], per_offset[2]]),
+            )
 
         return Location(t_w, t_h)
 
@@ -413,7 +371,7 @@ class MonitorCalculator(FloatUtils):
         loc = loc or SNAP_LOCATION
         return divmod(loc - 1, DEFAUlT_GRID["cols"])
 
-    def calculate_grid(self, rows, cols, display):
+    def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
         if self.cache_grid:
             return self.cache_grid
         main_loc = Location(int(display.width / cols), int(display.height / rows))
@@ -423,10 +381,11 @@ class MonitorCalculator(FloatUtils):
         i = 1
         rolling_dimension = Location(0, 0)
         row_match = roll_width = roll_height = 0
+        carry_flag = True
         for row in range(len(grid)):
             row_tracker = row
             for col in range(len(grid[row])):
-                if row != 0 or col != 0:
+                if row != 0 or col != 0:  # Top row and left col
                     roll_width = rolling_dimension.width + self.per_quadrant_dim.width
                 if row_match != row_tracker:
                     roll_height = (
@@ -434,18 +393,22 @@ class MonitorCalculator(FloatUtils):
                     )
                     row_match = row_tracker
                     roll_width = 0
-
+                # Roll from previous grid number
                 rolling_dimension = Location(roll_width, roll_height)
-                true_top_left = self.calc_monitor_offset(
-                    "snap", rolling_dimension, loc=i
-                )
-                grid[row][col] = (i, true_top_left)
+                if carry_flag:
+                    overlay_top = self.calc_monitor_offset(
+                        "snap", rolling_dimension, loc=i
+                    )
+                    adjusted = Location(  # Adjust for offset
+                        abs(roll_width - overlay_top.width),
+                        abs(roll_height + overlay_top.height),
+                    )
+                else:
+                    adjusted = Location(roll_width, roll_height)
+                grid[row][col] = (i, adjusted)
                 i += 1
-        self.cache_grid = self.overlay_offset_grid(grid)
+        self.cache_grid = grid
         return grid
-
-    def overlay_offset_grid(self, grid: Location) -> Location:
-        pass
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
