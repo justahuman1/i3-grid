@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """License:
     Copyright (C) 2020 justahuman1
 
@@ -16,6 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 from argparse import (
     SUPPRESS,
     Action,
@@ -26,6 +28,10 @@ from argparse import (
 
 
 class CustomFormatter(HelpFormatter):
+    """Custom Formatter used for documentation
+    in order to add groups and include metadata
+    for each command."""
+
     def _format_action_invocation(self, action):
         if not action.option_strings:
             (metavar,) = self._metavar_formatter(action, action.dest)(1)
@@ -48,6 +54,10 @@ class CustomFormatter(HelpFormatter):
 
 
 class NoAction(Action):
+    """Parser default setting changes to
+    help action calling. Allows for individual
+    groups per namespace."""
+
     def __init__(self, **kwargs):
         kwargs.setdefault("default", SUPPRESS)
         kwargs.setdefault("nargs", 0)
@@ -58,6 +68,9 @@ class NoAction(Action):
 
 
 class Documentation:
+    """The help menu for
+    the FloatManager. Presented with
+    the '-h' flag."""
     def __init__(self,):
         super().__init__()
         self.actions = {

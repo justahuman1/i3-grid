@@ -12,7 +12,7 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 
 - Rofi \*frontend (Fully customizable)
 - Python CLI and Library (includes event listeners for additional scripting)
-- Reshape and pin floating windows at any precise locations with ease
+- Reshape and pin floating windows to any precise locations on screen
 - On the fly workspaces
 - Deep customization with powerful out of the box features
 

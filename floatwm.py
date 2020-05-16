@@ -71,6 +71,9 @@ DISPLAY_MONITORS = {
 
 
 class Utils:
+    """External utilities for
+    external I/O commands and
+    user configurations."""
     def __init__(self,):
         super().__init__()
 
@@ -209,13 +212,11 @@ class Utils:
         if p in kwargs and kwargs[p]:
             CUSTOM_PERCENTAGE = kwargs[p]
 
-    # @staticmethod
-    # def offset_override(**kwargs):
-    #     global TILE_OFFSET
-    #     assert "display" in kwargs, "Missing Display Information"
-
 
 class FloatUtils:
+    """Utilities directly utilized
+    by the float manager for i3 workspace
+    metadata."""
     def __init__(self):
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
@@ -249,9 +250,6 @@ class FloatUtils:
                 self.find_focused_window(root)
         else:
             return
-
-    def _calc_win_resize(self):
-        pass
 
     def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = i3.get_outputs()
@@ -452,11 +450,12 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the target (default: 0) position in
         current grid (default: 2*2)"""
-        target_pos = self.get_target(self.focused_node)
-        true_center = self.get_offset(center=False,)
         if AUTO_RESIZE:
             self.make_resize()
+            # Resync to state
             self.post_commands()
+        target_pos = self.get_target(self.focused_node)
+        true_center = self.get_offset(center=False,)
 
         Utils.dispatch_i3msg_com("move", true_center)
 
@@ -485,9 +484,9 @@ class FloatManager(Movements):
         # Run initalizing commands
         # partitioned for multiple commands
         self.post_commands()
-
         if AUTO_FLOAT_CONVERT:
             self.make_float()
+            # Resync to state
             self.post_commands()
 
         executors = [
@@ -520,6 +519,7 @@ class FloatManager(Movements):
 
 
 def debugger():
+    """Evaluates user input expression."""
     print("Entering debug mode. Evaluating input:")
     while 1:
         cmd = input(">>> ")

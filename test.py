@@ -30,10 +30,6 @@ class Unit:
 
     def execute_bash(self, command_str):
         return floatwm.Utils.dipatch_bash_command(command_str)
-        # if (not command_str or
-        #    command_str.strip() == ""): raise ValueError("null command")
-        # out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
-        # return out.stdout
 
 
 class CacheTest:
