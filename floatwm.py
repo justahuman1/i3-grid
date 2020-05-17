@@ -265,6 +265,8 @@ class FloatUtils:
 
     def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = i3.get_outputs()
+        print('All displays')
+        print(self.displays)
 
         # Widths * Lengths (seperated to retain composition for children)
         total_size = {}
@@ -284,6 +286,7 @@ class FloatUtils:
     def get_wk_number(self) -> int:
         c_monitor = 0
         for display in self.displays:
+            print(display)
             if display["name"] in DISPLAY_MONITORS:
                 if self.match(display):
                     break
@@ -343,13 +346,10 @@ class MonitorCalculator(FloatUtils):
             )
             return self.cache_resz
         elif mode == "snap":
-            per_offset = [int(i / 2) for i in TILE_OFFSET]
-            if DEFAUlT_GRID['rows'] == 1 or DEFAUlT_GRID['cols']  == 1:
-                print("Onner huh")
-                pass
+            per_offset = [int(i) for i in TILE_OFFSET]
             return Location(
-                width=sum([per_offset[1], per_offset[3]]),
-                height=sum([per_offset[0], per_offset[2]]),
+                width=per_offset[1], # per_offset[3],
+                height=per_offset[0], # per_offset[2],
             )
 
         return Location(t_w, t_h)
@@ -523,6 +523,7 @@ class FloatManager(Movements):
     def post_commands(self) -> None:
         # If not float, make float -> <movement>
         self.workspace_num = self.get_wk_number()
+        # exit()
         # Set the focused node
         self.assign_focus_node()
         self.float_grid = self.calculate_grid(

@@ -54,7 +54,7 @@ Settings:
         - 20 # Top
         - 0 # Right
         - 20 # Bottom
-        - 30 # Left
+        - 0 # Left
 
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.
