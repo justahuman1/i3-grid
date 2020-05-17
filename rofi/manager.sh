@@ -52,7 +52,7 @@ for i in ${grid[*]}; do
 done
 
 # grid options passed to rofi
-chosen="$(echo -e "$options" | $rofi_command -dmenu -selected-row 0)"
+chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
 # Path to the src python file
 src_file="$app_abs_path/floatwm.py"
@@ -112,15 +112,15 @@ fi
 if [[ "$chosen"  ==  "0" ]]; then
     python  $src_file float resize snap --target 0
 elif [[ "$chosen"  ==  "C" ]]; then
-    p="$($rofi_command -dmenu -selected-row 0)"
+    p="$($rofi_command -dmenu -p "% -" -selected-row 0)"
     python $src_file csize --perc=$p
 elif [[ "$chosen"  ==  "D" ]]; then
-    target="$($rofi_command -dmenu -selected-row 0)"
+    target="$($rofi_command -dmenu -p 'Target:' -selected-row 0)"
     python $src_file float resize snap --target $target
 elif [[ "$chosen"  ==  "R" ]]; then
     python $src_file float reset
 elif [[ "$chosen"  ==  "X" ]]; then
-    custom="$($rofi_command -dmenu -selected-row 0)"
+    custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"
     IFS=' ' read -ra r_c_t <<< "$custom"
     if [[ "${#r_c_t[@]}" != "3" ]]; then
         echo "Incorrect Argument Length (Need Row, Col, Target)"

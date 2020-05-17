@@ -58,9 +58,10 @@ window {
   /* Max height will help large monitor
   strech prevention Does not apply in rofi config */
     // We can make this dynamic for different sized grids
-  width: 130px;
+  width: 140px;
   height: 130px;
   x-offset: -0.5%;
+  border: 0;
 }
 mainbox {
   children: [ inputbar, listview ];
@@ -69,8 +70,6 @@ mainbox {
   border-radius: 12px;
   background-color: @bg;
   border-radius: 12;
-  border: 2;
-  border-color: #ffffff0A;
 }
 listview {
   columns: ${COLS};
@@ -82,7 +81,6 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  /* padding: 8 12 8 12; */
   padding: 0 0 6 -22;
   border-radius: 6;
 }
@@ -108,7 +106,7 @@ element-text {
   /* padding: 10 10 10 10; */
 }
 inputbar {
-  children: [entry];
+  children: [prompt,entry];
   padding: 4 4 4 4;
   background-color: #242222;
   border: 0 0 1 0;
@@ -116,6 +114,7 @@ inputbar {
 }
 prompt {
   enabled: true;
+  color: rgb(89, 145, 254);
 }
 entry {
   text-color: @txt;
