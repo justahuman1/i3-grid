@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """License:
     Copyright (C) 2020 justahuman1
 
@@ -31,15 +32,6 @@ class Unit:
     def execute_bash(self, command_str):
         return floatwm.Utils.dipatch_bash_command(command_str)
 
-
-class CacheTest:
-    """Cache Test"""
-
-    def __init__(self,):
-        super().__init__()
-
-    def read_file(self,):
-        print(floatwm.CacheManager().get("key"))
 
 
 # FloatManager Test

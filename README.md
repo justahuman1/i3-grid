@@ -35,4 +35,6 @@ PR's very welcome :). Order of importance will be according to issues and PR cou
 
 ## Known Bugs
 
-- Multi-select offset resizing (Does not respect all offsets)
+- ~~Multi-select offset resizing (Does not respect all offsets)~~
+- Left & Right offsets are wonky (Applies to both sides).
+- Multiple Screens

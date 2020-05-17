@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pickle
-import datetime
 import argparse
+import datetime
 import os
 import subprocess
 import sys
@@ -12,8 +11,11 @@ from typing import Dict, List
 
 import i3
 import yaml
-
-from doc import Documentation
+from i3 import Socket
+try:
+    from doc import Documentation
+except ModuleNotFoundError:
+    pass
 
 """ i3_float_wm is a script to manage floating windows for the
 i3 tiling window manager. The code is split into several classes, which isolate
@@ -74,7 +76,8 @@ class Utils:
     """External utilities for
     external I/O commands and
     user configurations."""
-    def __init__(self,):
+
+    def __init__(self,) -> None:
         super().__init__()
 
     @staticmethod
@@ -205,17 +208,19 @@ class Utils:
         p = "perc"
         nr = "noresize"
         nf = "nofloat"
-        if r in kwargs and kwargs[r]:
+        verify = lambda key: key in kwargs and kwargs[key]
+
+        if verify(r):
             DEFAUlT_GRID[r] = kwargs[r]
-        if c in kwargs and kwargs[c]:
+        if verify(c):
             DEFAUlT_GRID[c] = kwargs[c]
-        if t in kwargs and kwargs[t]:
+        if verify(t):
             SNAP_LOCATION = kwargs[t]
-        if p in kwargs and kwargs[p]:
+        if verify(p):
             CUSTOM_PERCENTAGE = kwargs[p]
-        if nr in kwargs and kwargs[nr]:
+        if verify(nr):
             AUTO_RESIZE = not kwargs[nr]
-        if nf in kwargs and kwargs[nf]:
+        if verify(nf):
             AUTO_FLOAT_CONVERT = not kwargs[nf]
 
 
@@ -223,7 +228,8 @@ class FloatUtils:
     """Utilities directly utilized
     by the float manager for i3 workspace
     metadata."""
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.area_matrix, self.current_display = self._calc_metadata()
         assert len(self.current_display) > 0, "Incorrect Display Input"
 
@@ -294,12 +300,12 @@ class FloatUtils:
                 return False
         return True
 
-    def get_i3_socket(self):
+    def get_i3_socket(self) -> Socket:
         return i3.Socket()
 
 
 class MonitorCalculator(FloatUtils):
-    def __init__(self,):
+    def __init__(self,) -> None:
         super().__init__()
         self.cache_grid = None
         self.cache_resz = None
@@ -307,7 +313,7 @@ class MonitorCalculator(FloatUtils):
     def calc_monitor_offset(
         self, mode: str, point: Location, loc: int = None
     ) -> Location:
-        if self.cache_resz and mode == "resize":
+        if mode == "resize" and self.cache_resz:
             return self.cache_resz
 
         rows = DEFAUlT_GRID["rows"]
@@ -329,12 +335,18 @@ class MonitorCalculator(FloatUtils):
         t_h = point.height
         t_w = point.width
         if mode == "resize":
+            r_l = mode_defs[mode](1, 3, cols)
+            t_b = mode_defs[mode](0, 2, rows)
+
             self.cache_resz = Location(
-                t_w - mode_defs[mode](1, 3, cols), t_h - mode_defs[mode](0, 2, cols),
+                t_w - r_l, t_h - t_b,
             )
             return self.cache_resz
         elif mode == "snap":
             per_offset = [int(i / 2) for i in TILE_OFFSET]
+            if DEFAUlT_GRID['rows'] == 1 or DEFAUlT_GRID['cols']  == 1:
+                print("Onner huh")
+                pass
             return Location(
                 width=sum([per_offset[1], per_offset[3]]),
                 height=sum([per_offset[0], per_offset[2]]),
@@ -422,7 +434,7 @@ class MonitorCalculator(FloatUtils):
 
 
 class Movements(MonitorCalculator):
-    def __init__(self,):
+    def __init__(self,) -> None:
         super().__init__()
         # Contains all the cache keys for movements
         self.cache_monitor_grid = "monitor_grid"
@@ -435,24 +447,20 @@ class Movements(MonitorCalculator):
         # The height vector is difficult to calculate due to XRandr
         # offsets (that can extend in any direction).
         true_center = self.get_offset()
-        # TODO
-        # Apply offset (user preference (due to polybar, etc.))
-        # Apply screen offset (XRandr)
-
         # Dispatch final command
         Utils.dispatch_i3msg_com(command="move", data=true_center)
 
-    def make_resize(self, **kwargs):
+    def make_resize(self, **kwargs) -> None:
         target_size = self.per_quadrant_dim
         Utils.dispatch_i3msg_com("resize", data=target_size)
 
-    def custom_resize(self, **kwargs):
+    def custom_resize(self, **kwargs) -> None:
         Utils.dispatch_i3msg_com("custom", data=f"{CUSTOM_PERCENTAGE}ppt")
 
-    def get_target(self, node):
+    def get_target(self, node) -> None:
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
-    def snap_to_grid(self, **kwargs):
+    def snap_to_grid(self, **kwargs) -> None:
         """Moves the focused window to
         the target (default: 0) position in
         current grid (default: 2*2)"""
@@ -475,7 +483,7 @@ class Movements(MonitorCalculator):
 
 
 class FloatManager(Movements):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Manager > Movement > Calculator > Utility > Dispatch event"""
         super().__init__()
         # 1) Read config and merge globals
@@ -505,14 +513,14 @@ class FloatManager(Movements):
         ]
         self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
 
-    def run_command(self, cmd, **kwargs):
+    def run_command(self, cmd: str, **kwargs) -> None:
         if cmd not in self.com_map:
             raise KeyError("No corresponding run command to input:", cmd)
         # Commands that must be refreshed on every action (cheap C socket transfer)
         self.post_commands()
         self.com_map[cmd](**kwargs)
 
-    def post_commands(self):
+    def post_commands(self) -> None:
         # If not float, make float -> <movement>
         self.workspace_num = self.get_wk_number()
         # Set the focused node
@@ -524,7 +532,7 @@ class FloatManager(Movements):
         )
 
 
-def debugger():
+def debugger() -> None:
     """Evaluates user input expression."""
     print("Entering debug mode. Evaluating input:")
     while 1:
@@ -538,17 +546,19 @@ if __name__ == "__main__":
         exit(0)
 
     start = datetime.datetime.now()
-    doc = Documentation()
+    try:
+        doc = Documentation()
+    except NameError:
+        print("Missing Documentation (doc.py).")
+        exit(1)
+
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
     # Manager can simply be an unpacker
     # to args, rather than manual
     # seralizing into kwargs.
-    manager = FloatManager(
-        commands=comx,
-        **args.__dict__,
-    )
+    manager = FloatManager(commands=comx, **args.__dict__,)
     for action in args.actions:
         manager.run_command(cmd=action)
 

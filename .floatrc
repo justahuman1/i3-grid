@@ -47,14 +47,14 @@ Settings:
         Columns: 3
     GridOffset:
         # Offset from screen borders (useful for polybar, etc.)
-        # Order here matters.
+        # Order matters here.
         # Offset from top, right, bottom, left (in order)
         # This format is similar to CSS
         # Units: pixels {int}
         - 20 # Top
         - 0 # Right
         - 20 # Bottom
-        - 0 # Left
+        - 30 # Left
 
     # Default location to snap window to (if not given on the fly)
     # The grid is read from top to bottom and left to right.

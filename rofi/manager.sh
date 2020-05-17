@@ -40,7 +40,7 @@ grid=(
     "C" # Custom Percentage, center window (ofc, you can override otf)
     "D" # Use default rc file rows and col nums to create grid and use input num as snap target
     "R" # Reset to i3 default center (75% screen)
-    "X" # Custom row, col, target parsing
+    "X" # Custom col, row, target parsing
 )
 # Without the swap, we can make it dynamic and allow on the fly
 # grids. We need to change our python library to adjust for this.

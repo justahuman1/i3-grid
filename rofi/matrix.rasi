@@ -34,7 +34,7 @@ configuration {
 	fake-transparency: false;
 	hide-scrollbar: true;
 	bw: 0;
-    fullscreen: true;
+    fullscreen: false;
     show-icons: true;
 	terminal: "kitty";
 	sidebar-mode: true;
@@ -45,6 +45,8 @@ configuration {
   ac-txt: #869fa2;
   item: #bdc3c3;
   txt: #d1d5da;
+  anchor: east;
+  location: east;
 }
 * {
   background-color: rgba(0,0,0,0);
@@ -52,19 +54,23 @@ configuration {
 }
 window {
   transparency: "real";
-  fullscreen: true;
+  fullscreen: false;
+  /* Max height will help large monitor
+  strech prevention Does not apply in rofi config */
+    // We can make this dynamic for different sized grids
+  width: 130px;
+  height: 130px;
+  x-offset: -0.5%;
 }
 mainbox {
   children: [ inputbar, listview ];
-  margin: 40% 0.3% 43% 90%;
-  /* Max height will help large monitor
-  strech prevention Does not apply in rofi config */
-  /* max-height: 10px; */
+  y-offset: 0%;
+  border: 0px;
+  border-radius: 12px;
   background-color: @bg;
   border-radius: 12;
   border: 2;
   border-color: #ffffff0A;
-  /* padding: 11px; */
 }
 listview {
   columns: ${COLS};
@@ -77,7 +83,7 @@ element {
   text-color: @item;
   orientation: vertical;
   /* padding: 8 12 8 12; */
-  padding: 0 0 6 -6;
+  padding: 0 0 6 -22;
   border-radius: 6;
 }
 element selected {
