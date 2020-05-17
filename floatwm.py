@@ -348,8 +348,8 @@ class MonitorCalculator(FloatUtils):
         elif mode == "snap":
             per_offset = [int(i) for i in TILE_OFFSET]
             return Location(
-                width=per_offset[1], # per_offset[3],
-                height=per_offset[0], # per_offset[2],
+                width=per_offset[1],
+                height=per_offset[0],
             )
 
         return Location(t_w, t_h)

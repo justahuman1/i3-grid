@@ -19,6 +19,7 @@
 """
 import subprocess
 import sys
+from doc import Documentation
 
 import floatwm
 
@@ -84,6 +85,20 @@ class IntegrationTests:
         comx = ["float", "center", "snap"]
 
 
+class Temp:
+    """Temporary testing"""
+    def __init__(self, ):
+        super().__init__()
+
+    def s(self):
+        doc = Documentation()
+        comx = list(doc.actions)
+        manager = floatwm.FloatManager(commands=comx)
+        manager.run_command(cmd='snap')
+
+
+
+
 # TODO - Add commands to dictionary and consider pytest
 # Currently, pytest is not being used because the code is still pretty small
 # center_test()
@@ -91,4 +106,4 @@ class IntegrationTests:
 # ManagerTest().center_test()
 # help_test()
 # UtilsTest().yaml_load_test()
-CacheTest().read_file()
+Temp().s()
