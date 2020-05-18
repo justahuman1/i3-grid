@@ -19,7 +19,7 @@
 
 # ---- Rofi Frontend ----
 # src file absolute path
-app_abs_path="/home/sai/Code/temp/quadrant3"
+app_abs_path="/home/sai/Code/FullApps/quadrant"
 # Set rofi env vars for rasi config
 # Corresponds to grid numbers..
 export COLS=2

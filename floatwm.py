@@ -9,9 +9,9 @@ import sys
 from collections import namedtuple
 from typing import Dict, List
 
-import i3
 import yaml
 from i3 import Socket
+import i3
 try:
     from doc import Documentation
 except ModuleNotFoundError:
