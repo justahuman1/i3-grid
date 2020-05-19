@@ -18,13 +18,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from argparse import (
-    SUPPRESS,
-    Action,
-    ArgumentParser,
-    HelpFormatter,
-    RawTextHelpFormatter,
-)
+from argparse import (SUPPRESS, Action, ArgumentParser, HelpFormatter,
+                      RawTextHelpFormatter)
 
 
 class CustomFormatter(HelpFormatter):
@@ -71,6 +66,7 @@ class Documentation:
     """The help menu for
     the FloatManager. Presented with
     the '-h' flag."""
+
     def __init__(self,):
         super().__init__()
         self.actions = {
@@ -79,7 +75,10 @@ class Documentation:
             "resize": "Resize focused window (if float)",
             "snap": "Runs grid placement (can be combined with all other actions). Arguments include rows, cols, and target",
             "csize": "Resize the window into a custom size of screen (1-100)",
-            "reset": "Resets the focused window into the middle occupying 75ppt screen space (i3 default)",
+            "reset": "Resets the focused window into the middle occupying"
+            " 75ppt (i3 default) screen space",
+            "listen": "Socket Listener (sole action) for event binding in native Python and"
+            " command line (Listens on port flag or default: 65433)",
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"The number of {ax} slices in screen grid {_rc_def}"
@@ -98,6 +97,11 @@ class Documentation:
             },
             "noresize": {"type": "bool", "help": _ova("resize")},
             "nofloat": {"type": "bool", "help": _ova("float")},
+            "port": {
+                "type": "int",
+                "help": "The port number to listen for floatwm events"
+                " (Overriding port for server requires overriding for the client also)",
+            },
         }
 
     def build_parser(self, choices: list) -> ArgumentParser:

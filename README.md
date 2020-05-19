@@ -10,9 +10,9 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 
 ## Features
 
-- Rofi \*frontend (Fully customizable)
-- Python CLI and Library (includes event listeners for additional scripting)
 - Reshape and pin floating windows to any precise locations on screen
+- Rofi \*frontend (Fully customizable)
+- Python CLI and Library (includes event listeners for additional callbacks)
 - On the fly workspaces
 - Deep customization with powerful out of the box features
 
@@ -22,19 +22,18 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 
 PR's very welcome :). Order of importance will be according to issues and PR count.
 
-- Remember Previous option and automatically follow "on the fly grid" (cache)
-- Dynamic Rofi menu to rc config file (Adjust height and width)
-- Support Multiple Screens (Important!)
-- Deep scratchpad integration
+- Support Multiple Screens (Current Top Priority)
 - Templating feature for quick floating env startup
+- Remember Previous option and automatically follow trend (cache)
+- Dynamic Rofi menu (width, height) to rc config settings
+- Deep scratchpad integration (Drop-down list)
 - Additional Options:
   - Send all floating windows to a temporary scratchpad (accessible via rofi)
-  - Fill up the rest of the screen with new window (Recursive stack)
-  - Add a history options to Rofi Menu
+  - Fill the remaining of the floating screen with new window (Recursive stack)
+  - Add a history options to Rofi Menu (Previously ran commands)
   - Advanced Rofi menu (allowing complex command generation on the fly)
 
 ## Known Bugs
 
 - ~~Multi-select offset resizing (Does not respect all offsets)~~
-- Left & Right offsets are wonky (Applies to both sides).
-- Multiple Screens
+- ~~Left & Right offsets are wonky (Applies to both sides)~~

@@ -19,9 +19,10 @@
 """
 import subprocess
 import sys
-from doc import Documentation
+import time
 
 import floatwm
+from doc import Documentation
 
 
 class Unit:
@@ -32,7 +33,6 @@ class Unit:
 
     def execute_bash(self, command_str):
         return floatwm.Utils.dipatch_bash_command(command_str)
-
 
 
 # FloatManager Test
@@ -47,6 +47,12 @@ class ManagerTest(Unit):
 
     def grid_test(self, target):
         (floatwm.FloatManager(target=target).run_command("snap"))
+
+    def main_run_emulator(self):
+        doc = Documentation()
+        comx = list(doc.actions)
+        manager = floatwm.FloatManager(commands=comx)
+        manager.run_command(cmd="snap")
 
 
 # Utils Unit test
@@ -85,18 +91,25 @@ class IntegrationTests:
         comx = ["float", "center", "snap"]
 
 
-class Temp:
-    """Temporary testing"""
-    def __init__(self, ):
+class SocketTest:
+    """Test Socket client and server
+    for i3 messaging & event listening."""
+
+    def __init__(self,):
         super().__init__()
 
-    def s(self):
-        doc = Documentation()
-        comx = list(doc.actions)
-        manager = floatwm.FloatManager(commands=comx)
-        manager.run_command(cmd='snap')
+    def start_server(self):
+        self.server = floatwm.Middleware()
+        self.server.start_server(data_mapper=SocketTest.test_function)
 
-
+    @staticmethod
+    def test_function(data):
+        print("In custom middleware function.")
+        # Data manipulations and event handling
+        data = str(data)
+        time.sleep(5)
+        transformed_data = data.lower()
+        print(transformed_data)
 
 
 # TODO - Add commands to dictionary and consider pytest
@@ -106,4 +119,4 @@ class Temp:
 # ManagerTest().center_test()
 # help_test()
 # UtilsTest().yaml_load_test()
-Temp().s()
+SocketTest().start_server()

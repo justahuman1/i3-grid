@@ -4,14 +4,19 @@
 import argparse
 import datetime
 import os
+import json
+import socket
 import subprocess
 import sys
+import threading
 from collections import namedtuple
 from typing import Dict, List
 
 import yaml
-from i3 import Socket
+
 import i3
+from i3 import Socket
+
 try:
     from doc import Documentation
 except ModuleNotFoundError:
@@ -70,6 +75,62 @@ DISPLAY_MONITORS = {
 }
 
 # TODO: handle multiple monitor (behind summation) offset
+
+
+class Middleware:
+    """User middleware for additional
+    event listening. Utilizes sockets
+    for instance communication."""
+
+    host = "127.0.0.1"
+    port = 65433
+
+    def __init__(self,):
+        super().__init__()
+
+    def start_server(self, data_mapper):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setblocking(1)
+            print(f"Binding to: {Middleware.host}/{Middleware.port}")
+            s.bind((Middleware.host, Middleware.port))
+            s.listen()
+            while True:
+                # We only have one listener at a time If we need
+                # multiple listeners, we can add threading here.
+                conn, addr = s.accept()
+                with conn:
+                    while True:
+                        data = conn.recv(1024)
+                        if not data:
+                            break
+                        data_mapper(data)
+                        # Bidirectional data flow
+                        # conn.sendall(data)
+
+    def dispatch_middleware(self, data, **kwargs):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            # Our socket is unidirectional for now. We can also allow for
+            # user middleware via python/bash if necessary
+            s.setblocking(1)
+            try:
+                s.connect((Middleware.host, Middleware.port))
+            except (ConnectionRefusedError, BlockingIOError):
+                return
+            s.sendall(Middleware.str2bin(data))
+            # If we want bidirectional data flow, we can have the client
+            # listen to the server for additional events.
+            # data = s.recv(1024)
+
+    @staticmethod
+    def str2bin(data: str, res_str: bool = False):
+        if not isinstance(data, str):
+            data = json.dumps(data)
+        return (
+            data.encode("ascii")
+            if not res_str
+            else " ".join(format(ord(x), "b") for x in data)
+        )
+
 
 
 class Utils:
@@ -161,7 +222,8 @@ class Utils:
             config = yaml.safe_load(f)
         if not config or "Settings" not in config:
             raise ValueError(
-                "Incorrect floatrc file sytax. Please follow yaml guidelines and example."
+                "Incorrect floatrc file sytax. Please"
+                " follow yaml guidelines and example."
             )
 
         # This turned into a really bad design. I need
@@ -175,23 +237,26 @@ class Utils:
         monitors_yml_key = "DisplayMonitors"
         auto_yml_key = "AutoConvertToFloat"
         resize_yml_key = "AutoResize"
+        port_yml_key = "SocketPort"
         settings = config["Settings"]
+        verify = lambda x: x in settings
 
-        if resize_yml_key in settings:
+        if verify(resize_yml_key):
             AUTO_RESIZE = settings[resize_yml_key]
-        if auto_yml_key in settings:
+        if verify(auto_yml_key):
             AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
-        if monitors_yml_key in settings:
+        if verify(monitors_yml_key):
             DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
-        if offs_yml_key in settings:
+        if verify(offs_yml_key):
             TILE_OFFSET = settings[offs_yml_key]
-        if grid_yml_key in settings:
+        if verify(grid_yml_key):
             DEFAUlT_GRID = {
                 "rows": settings[grid_yml_key][grid_yml_syn[0]],
                 "cols": settings[grid_yml_key][grid_yml_syn[1]],
             }
-
-        if snap_yml_key in settings:
+        if verify(port_yml_key):
+            Middleware.port = settings[port_yml_key]
+        if verify(snap_yml_key):
             if isinstance(settings[snap_yml_key], int):
                 SNAP_LOCATION = settings[snap_yml_key]
             else:
@@ -208,6 +273,7 @@ class Utils:
         p = "perc"
         nr = "noresize"
         nf = "nofloat"
+        po = "port"
         verify = lambda key: key in kwargs and kwargs[key]
 
         if verify(r):
@@ -222,6 +288,8 @@ class Utils:
             AUTO_RESIZE = not kwargs[nr]
         if verify(nf):
             AUTO_FLOAT_CONVERT = not kwargs[nf]
+        if verify(po):
+            Middleware.port = kwargs[po]
 
 
 class FloatUtils:
@@ -265,8 +333,8 @@ class FloatUtils:
 
     def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = i3.get_outputs()
-        print('All displays')
-        print(self.displays)
+        # print("All displays")
+        # print(self.displays)
 
         # Widths * Lengths (seperated to retain composition for children)
         total_size = {}
@@ -341,16 +409,11 @@ class MonitorCalculator(FloatUtils):
             r_l = mode_defs[mode](1, 3, cols)
             t_b = mode_defs[mode](0, 2, rows)
 
-            self.cache_resz = Location(
-                t_w - r_l, t_h - t_b,
-            )
+            self.cache_resz = Location(t_w - r_l, t_h - t_b,)
             return self.cache_resz
         elif mode == "snap":
             per_offset = [int(i) for i in TILE_OFFSET]
-            return Location(
-                width=per_offset[1],
-                height=per_offset[0],
-            )
+            return Location(width=per_offset[1], height=per_offset[0],)
 
         return Location(t_w, t_h)
 
@@ -482,7 +545,7 @@ class Movements(MonitorCalculator):
         Utils.dispatch_i3msg_com(command="float")
 
 
-class FloatManager(Movements):
+class FloatManager(Movements, Middleware):
     def __init__(self, **kwargs) -> None:
         """Manager > Movement > Calculator > Utility > Dispatch event"""
         super().__init__()
@@ -494,6 +557,7 @@ class FloatManager(Movements):
         # Run initalizing commands
         # partitioned for multiple commands
         self.post_commands()
+        # If not float, make float -> <movement>
         if AUTO_FLOAT_CONVERT:
             self.make_float()
             # Resync to state
@@ -510,6 +574,7 @@ class FloatManager(Movements):
             self.snap_to_grid,
             self.custom_resize,
             self.reset_win,
+            self.start_server,
         ]
         self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
 
@@ -518,12 +583,14 @@ class FloatManager(Movements):
             raise KeyError("No corresponding run command to input:", cmd)
         # Commands that must be refreshed on every action (cheap C socket transfer)
         self.post_commands()
+        x = threading.Thread(
+            target=self.dispatch_middleware, args=(self.focused_node,)
+        )
+        x.start()
         self.com_map[cmd](**kwargs)
 
     def post_commands(self) -> None:
-        # If not float, make float -> <movement>
         self.workspace_num = self.get_wk_number()
-        # exit()
         # Set the focused node
         self.assign_focus_node()
         self.float_grid = self.calculate_grid(
@@ -550,15 +617,29 @@ if __name__ == "__main__":
     try:
         doc = Documentation()
     except NameError:
-        print("Missing Documentation (doc.py).")
+        print("Missing Documentation (doc.py)")
         exit(1)
 
     comx = list(doc.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
-    # Manager can simply be an unpacker
-    # to args, rather than manual
-    # seralizing into kwargs.
+    # Check for sole commands (Static for now, only 1 value)
+    if "listen" in args.actions:
+        assert (
+            len(args.actions)
+        ) == 1, "'Listen' is a sole command. Do not pass additional actions"
+        Utils.read_config()
+        Utils.on_the_fly_override(port=args.port)
+        listener = Middleware()
+        try:
+            listener.start_server(data_mapper=print)
+        except KeyboardInterrupt:
+            print("\nClosing Floatwm socket...")
+        finally:
+            exit()
+
+    # Manager can simply be an unpacker to args,
+    # rather than manual seralizing into kwargs.
     manager = FloatManager(commands=comx, **args.__dict__,)
     for action in args.actions:
         manager.run_command(cmd=action)

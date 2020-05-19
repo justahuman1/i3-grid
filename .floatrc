@@ -87,3 +87,8 @@ Settings:
     # boolean: true/false
     AutoResize: true
 
+    # Default port for listenening and sending
+    # floatwm data. Can be used for additional scripting
+    # Ex: Call a script when the socket sends a specific message.
+    SocketPort: 42170
+
