@@ -84,9 +84,16 @@ class Documentation:
         _slc_txt = lambda ax: f"The number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
         _ova = lambda auto: f"Override auto {auto} on the fly {{bool}}"
+        # parser.add_argument('-l','--list', nargs='+', help='<Required> Set flag', required=True)
         self.flags = {
-            "rows": {"type": "int", "help": _slc_txt("row")},
             "cols": {"type": "int", "help": _slc_txt("col")},
+            "rows": {"type": "int", "help": _slc_txt("row")},
+            "offset": {
+                "type": "str",
+                "action": "append",
+                "nargs": "+",
+                "help": "On the fly offset per window",
+            },
             "perc": {
                 "type": "int",
                 "help": f"{_ffa('csize')} (Percentage of screen {{int}}[1-100])",
@@ -123,6 +130,9 @@ class Documentation:
             parser.add_argument(
                 f"--{flag}",
                 type=eval(self.flags[flag]["type"]),
+                nargs=self.flags[flag]["nargs"]
+                if "nargs" in self.flags[flag]
+                else None,
                 help=self.flags[flag]["help"],
             )
 

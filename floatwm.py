@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import collections
 import datetime
-import os
 import json
+import os
 import socket
 import subprocess
 import sys
@@ -19,18 +20,32 @@ from i3 import Socket
 
 try:
     from doc import Documentation
+
+    collectionsAbc = collections.abc
 except ModuleNotFoundError:
     pass
+except AttributeError:
+    collectionsAbc = collections
 
 """ i3_float_wm is a script to manage floating windows for the
 i3 tiling window manager. The code is split into several classes, which isolate
 the logic respective to its name. The process flow is as follows:
 
-    1) FloatManager: Manages the user input parsing and function dispatches.
-    2) Movements: Contains the functions that are directly called by the user to invoke window actions.
-    3) MonitorCalculator: Manages the xrandr display settings to make display agnostic window decisions.
-    4) FloatUtils: The meta functions of the manager that directly assist the movements and calculator.
-    5) Utils: Additional utilities to abstract debugging, RPC calls, etc.
+    1) FloatManager:      Manages the user input parsing and function dispatches.
+
+    2) Movements:         Contains the functions that are directly
+                          called by the user to invoke window actions.
+
+    3) MonitorCalculator: Manages the xrandr display settings
+                          to make display agnostic window decisions.
+
+    4) FloatUtils:        The meta functions of the manager that
+                          directly assist the movements and calculator.
+
+    5) Utils:             Additional utilities to abstract debugging,
+                          RPC calls, etc.
+    6) Middleware:        Manages socket connections for API bindings via
+                          library or command line.
 -------------
 License:
     Copyright (C) 2020 justahuman1
@@ -50,6 +65,11 @@ License:
 """
 # Formatted with Black: https://github.com/psf/black
 
+__author__ = "Justahuman1"
+__version__ = "0.2.1"
+__date__ = "2012-05-20"
+__license__ = "GNU GPL 3"
+
 # Custom Types
 # The x and y coordinates of any X11 object
 Location = namedtuple("Location", "width height")
@@ -64,7 +84,7 @@ AUTO_RESIZE = False
 SNAP_LOCATION = 0
 CUSTOM_PERCENTAGE = 50
 RC_FILE_NAME = "floatrc"
-DEFAUlT_GRID = {"rows": 2, "cols": 2}
+DEFAULT_GRID = {"rows": 2, "cols": 2}
 # Follows CSS format
 # [Top, Right, Bottom, Left]
 TILE_OFFSET = [0, 0, 0, 0]
@@ -73,29 +93,29 @@ DISPLAY_MONITORS = {
     "HDMI1",
     "VGA",
 }
-
 # TODO: handle multiple monitor (behind summation) offset
 
 
 class Middleware:
-    """User middleware for additional
-    event listening. Utilizes sockets
-    for instance communication."""
+    """User middleware for additional event listening.
+    Utilizes sockets for instance communication."""
 
     host = "127.0.0.1"
     port = 65433
 
-    def __init__(self,):
+    def __init__(self,) -> None:
         super().__init__()
 
-    def start_server(self, data_mapper):
+    def start_server(self, data_mapper: collectionsAbc.Callable):
+        """Begins an AF_INET server at the given
+        port to listen for floatwm middleware."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
             print(f"Binding to: {Middleware.host}/{Middleware.port}")
             s.bind((Middleware.host, Middleware.port))
             s.listen()
             while True:
-                # We only have one listener at a time If we need
+                # We only have one listener at a time. If we need
                 # multiple listeners, we can add threading here.
                 conn, addr = s.accept()
                 with conn:
@@ -107,7 +127,8 @@ class Middleware:
                         # Bidirectional data flow
                         # conn.sendall(data)
 
-    def dispatch_middleware(self, data, **kwargs):
+    def dispatch_middleware(self, data: str, **kwargs):
+        """Client Middleware to send data to server"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Our socket is unidirectional for now. We can also allow for
             # user middleware via python/bash if necessary
@@ -130,7 +151,6 @@ class Middleware:
             if not res_str
             else " ".join(format(ord(x), "b") for x in data)
         )
-
 
 
 class Utils:
@@ -194,7 +214,7 @@ class Utils:
     @staticmethod
     def read_config() -> None:
         global DISPLAY_MONITORS, RC_FILE_NAME
-        global AUTO_FLOAT_CONVERT, DEFAUlT_GRID
+        global AUTO_FLOAT_CONVERT, DEFAULT_GRID
         global SNAP_LOCATION, AUTO_RESIZE
         global TILE_OFFSET
 
@@ -239,8 +259,11 @@ class Utils:
         resize_yml_key = "AutoResize"
         port_yml_key = "SocketPort"
         settings = config["Settings"]
-        verify = lambda x: x in settings
 
+        def verify(x):
+            x in settings
+
+        # Serialize config file
         if verify(resize_yml_key):
             AUTO_RESIZE = settings[resize_yml_key]
         if verify(auto_yml_key):
@@ -250,7 +273,7 @@ class Utils:
         if verify(offs_yml_key):
             TILE_OFFSET = settings[offs_yml_key]
         if verify(grid_yml_key):
-            DEFAUlT_GRID = {
+            DEFAULT_GRID = {
                 "rows": settings[grid_yml_key][grid_yml_syn[0]],
                 "cols": settings[grid_yml_key][grid_yml_syn[1]],
             }
@@ -260,13 +283,13 @@ class Utils:
             if isinstance(settings[snap_yml_key], int):
                 SNAP_LOCATION = settings[snap_yml_key]
             else:
-                raise ValueError("Unexpected Snap location data type (expected int)")
+                raise ValueError("Unexpected Snap location data type" "(expected int)")
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
-        global SNAP_LOCATION, DEFAUlT_GRID
+        global SNAP_LOCATION, DEFAULT_GRID
         global CUSTOM_PERCENTAGE, AUTO_RESIZE
-        global AUTO_FLOAT_CONVERT
+        global AUTO_FLOAT_CONVERT, TILE_OFFSET
         r = "rows"
         c = "cols"
         t = "target"
@@ -274,12 +297,14 @@ class Utils:
         nr = "noresize"
         nf = "nofloat"
         po = "port"
-        verify = lambda key: key in kwargs and kwargs[key]
+        o = "offset"
+
+        def verify(key): key in kwargs and kwargs[key]
 
         if verify(r):
-            DEFAUlT_GRID[r] = kwargs[r]
+            DEFAULT_GRID[r] = kwargs[r]
         if verify(c):
-            DEFAUlT_GRID[c] = kwargs[c]
+            DEFAULT_GRID[c] = kwargs[c]
         if verify(t):
             SNAP_LOCATION = kwargs[t]
         if verify(p):
@@ -290,6 +315,15 @@ class Utils:
             AUTO_FLOAT_CONVERT = not kwargs[nf]
         if verify(po):
             Middleware.port = kwargs[po]
+        if verify(o):
+            assert (
+                len(kwargs[o]) <= 4
+            ), "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
+
+            while len(kwargs[o]) != 4:
+                kwargs[o] += [0]
+            TILE_OFFSET = [int(i) for i in kwargs[o]]
+            TILE_OFFSET[1], TILE_OFFSET[3] = TILE_OFFSET[3], TILE_OFFSET[1]
 
 
 class FloatUtils:
@@ -387,8 +421,8 @@ class MonitorCalculator(FloatUtils):
         if mode == "resize" and self.cache_resz:
             return self.cache_resz
 
-        rows = DEFAUlT_GRID["rows"]
-        cols = DEFAUlT_GRID["cols"]
+        rows = DEFAULT_GRID["rows"]
+        cols = DEFAULT_GRID["cols"]
         assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
@@ -448,7 +482,7 @@ class MonitorCalculator(FloatUtils):
     def find_grid_axis(self, loc: int = None):
         # row, col
         loc = loc or SNAP_LOCATION
-        return divmod(loc - 1, DEFAUlT_GRID["cols"])
+        return divmod(loc - 1, DEFAULT_GRID["cols"])
 
     def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
         if self.cache_grid:
@@ -556,16 +590,14 @@ class FloatManager(Movements, Middleware):
 
         # Run initalizing commands
         # partitioned for multiple commands
-        self.post_commands()
+        self.post_commands()  # Sync to state
         # If not float, make float -> <movement>
         if AUTO_FLOAT_CONVERT:
             self.make_float()
-            # Resync to state
-            self.post_commands()
+            self.post_commands()  # Resync to state
         if AUTO_RESIZE:
             self.make_resize()
-            # Resync to state
-            self.post_commands()
+            # self.post_commands()  # Resync to state
 
         executors = [
             self.move_to_center,
@@ -579,14 +611,15 @@ class FloatManager(Movements, Middleware):
         self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
 
     def run_command(self, cmd: str, **kwargs) -> None:
+        """Commands that must be refreshed on
+        every action to sync state (C socket data transfer)"""
         if cmd not in self.com_map:
             raise KeyError("No corresponding run command to input:", cmd)
-        # Commands that must be refreshed on every action (cheap C socket transfer)
-        self.post_commands()
-        x = threading.Thread(
-            target=self.dispatch_middleware, args=(self.focused_node,)
-        )
-        x.start()
+        self.post_commands()  # Resync to state
+        threading.Thread(  # Thread middleware to speed up action
+            target=self.dispatch_middleware,
+            args=({"modifying_node": self.focused_node},),
+        ).start()  # Anonymous thread, since dataflow is unidirectional.
         self.com_map[cmd](**kwargs)
 
     def post_commands(self) -> None:
@@ -594,8 +627,8 @@ class FloatManager(Movements, Middleware):
         # Set the focused node
         self.assign_focus_node()
         self.float_grid = self.calculate_grid(
-            DEFAUlT_GRID["rows"],
-            DEFAUlT_GRID["cols"],
+            DEFAULT_GRID["rows"],
+            DEFAULT_GRID["cols"],
             self.area_matrix[self.workspace_num],
         )
 
@@ -636,7 +669,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("\nClosing Floatwm socket...")
         finally:
-            exit()
+            exit(0)
 
     # Manager can simply be an unpacker to args,
     # rather than manual seralizing into kwargs.

@@ -90,5 +90,6 @@ Settings:
     # Default port for listenening and sending
     # floatwm data. Can be used for additional scripting
     # Ex: Call a script when the socket sends a specific message.
-    SocketPort: 42170
+    # Default if not specifed: 65433
+    SocketPort: 65433
 
