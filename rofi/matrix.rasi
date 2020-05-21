@@ -46,19 +46,18 @@ configuration {
   txt: #d1d5da;
   anchor: east;
   location: east;
+  position: center;
 }
 * {
   background-color: rgba(0,0,0,0);
-  font: "Nerd Font 15";
+  font: "Nerd Font 13";
 }
 window {
   transparency: "real";
   fullscreen: false;
-  /* Max height will help large monitor
-  strech prevention Does not apply in rofi config */
   // We can make this dynamic for different sized grids
-  width: 140px;
-  height: 130px;
+  width: 220px;
+  height: 180px;
   x-offset: -0.5%;
   border: 0;
 }
@@ -69,18 +68,19 @@ mainbox {
   border-radius: 12px;
   background-color: @bg;
   border-radius: 12;
+  padding: 10 0 0 0;
 }
 listview {
   columns: ${COLS};
   lines: ${LINES};
-  padding: 8;
+  padding: 10 0 0 0;
   spacing: 0;
 }
 element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  padding: 0 0 6 -22;
+  padding: 0 0 6 -35;
   border-radius: 6;
 }
 element selected {
@@ -102,7 +102,6 @@ element-text {
   horizontal-align: 0.5;
   vertical-align: 2.5;
   text-color: inherit;
-  /* padding: 10 10 10 10; */
 }
 inputbar {
   children: [prompt,entry];
@@ -114,10 +113,11 @@ inputbar {
 prompt {
   enabled: true;
   color: #5e7797;
+  padding: 0 0 0 5;
 }
 entry {
   text-color: @txt;
   size: 4px;
-  padding: 8 12 8 12;
+  padding: 4 12 8 5;
   font: "Nerd Font 10";
 }

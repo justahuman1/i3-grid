@@ -15,6 +15,7 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 - Python CLI and Library (includes event listeners for additional callbacks)
 - On the fly workspaces
 - Deep customization with powerful out of the box features
+- Support Multiple Monitor Setups
 
 \*<sub>Rofi not necessary for functionality (seperate dmenu layer)</sub>
 
@@ -22,18 +23,19 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 
 PR's very welcome. Order of importance will be according to issues and PR count.
 
-- Support Multiple Screens (Current Top Priority)
-- Templating feature for quick floating env startup
+- Templating feature for quick floating env startup (Current Top Priority)
+- Deep scratchpad integration (Drop-down list)
 - Remember Previous option and automatically follow trend (cache)
 - Dynamic Rofi menu (width, height) to rc config settings
-- Deep scratchpad integration (Drop-down list)
 - Additional Options:
   - Send all floating windows to a temporary scratchpad (accessible via rofi)
   - Fill the remaining of the floating screen with new window (Recursive stack)
   - Add a history options to Rofi Menu (Previously ran commands)
   - Advanced Rofi menu (allowing complex command generation on the fly)
+  - Daemon to listen for screen changes and make background window transformations
+    - Probably will need to be written in C.
 
 ## Known Bugs
 
 - ~~Multi-select offset resizing (Does not respect all offsets)~~
-- ~~Left & Right offsets are wonky (Applies to both sides)~~
+- ~~Left & Right offsets are inaccurate (Applies to both sides)~~
