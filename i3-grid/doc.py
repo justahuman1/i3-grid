@@ -96,7 +96,7 @@ class Documentation:
             "multi": (
                 "Stretch a window across a range of numbers"
                 " (The numbers must be continous and linear)"
-            )
+            ),
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
