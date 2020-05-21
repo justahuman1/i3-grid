@@ -20,7 +20,7 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 
 ## Todos
 
-PR's very welcome :). Order of importance will be according to issues and PR count.
+PR's very welcome. Order of importance will be according to issues and PR count.
 
 - Support Multiple Screens (Current Top Priority)
 - Templating feature for quick floating env startup

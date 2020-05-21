@@ -1,22 +1,21 @@
 /*
-    GitHub: justahuman1
-    URL: https://github.com/justahuman1
+  GitHub: justahuman1
+  URL: https://github.com/justahuman1
 
-    License: GPL-3.0
-        Copyright (C) 2020 justahuman1
-         This program is free software: you can redistribute it and/or modify
-         it under the terms of the GNU General Public License as published by
-         the Free Software Foundation, either version 3 of the License, or
-         (at your option) any later version.
+  License: GPL-3.0
+    Copyright (C) 2020 Sai Valla
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
 
-         This program is distributed in the hope that it will be useful,
-         but WITHOUT ANY WARRANTY; without even the implied warranty of
-         MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-         GNU General Public License for more details.
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
 
-         You should have received a copy of the GNU General Public License
-         along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 // Documentation: https://github.com/davatorium/rofi/blob/next/doc/rofi-theme.5.markdown
@@ -27,17 +26,17 @@
 // can be made with 'X' and inputting custom grids)
 
 configuration {
-    display-drun: "FloatWM";
-	show-icons: true;
-	icon-theme: "Papirus-Dark";
-	location: 2;
-	fake-transparency: false;
-	hide-scrollbar: true;
-	bw: 0;
-    fullscreen: false;
-    show-icons: true;
-	terminal: "kitty";
-	sidebar-mode: true;
+  display-drun: "FloatWM";
+  show-icons: true;
+  icon-theme: "Papirus-Dark";
+  location: 2;
+  fake-transparency: false;
+  hide-scrollbar: true;
+  bw: 0;
+  fullscreen: false;
+  show-icons: true;
+  terminal: "kitty";
+  sidebar-mode: true;
 }
 * {
   bg: #000000;
@@ -57,7 +56,7 @@ window {
   fullscreen: false;
   /* Max height will help large monitor
   strech prevention Does not apply in rofi config */
-    // We can make this dynamic for different sized grids
+  // We can make this dynamic for different sized grids
   width: 140px;
   height: 130px;
   x-offset: -0.5%;

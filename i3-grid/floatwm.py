@@ -1,15 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# License:
+#     Copyright (C) 2020 Sai Valla
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import argparse
 import collections
 import datetime
 import json
 import os
 import socket
+import logging
 import subprocess
 import sys
 import threading
+from xrandr.xrandr import XRandR
 from collections import namedtuple
 from typing import Dict, List
 
@@ -17,15 +35,6 @@ import yaml
 
 import i3
 from i3 import Socket
-
-try:
-    from doc import Documentation
-
-    collectionsAbc = collections.abc
-except ModuleNotFoundError:
-    pass
-except AttributeError:
-    collectionsAbc = collections
 
 """ i3_float_wm is a script to manage floating windows for the
 i3 tiling window manager. The code is split into several classes, which isolate
@@ -46,26 +55,19 @@ the logic respective to its name. The process flow is as follows:
                           RPC calls, etc.
     6) Middleware:        Manages socket connections for API bindings via
                           library or command line.
--------------
-License:
-    Copyright (C) 2020 justahuman1
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 # Formatted with Black: https://github.com/psf/black
 
-__author__ = "Justahuman1"
+try:
+    from doc import Documentation
+
+    collectionsAbc = collections.abc
+except ModuleNotFoundError:
+    logger.critical("Missing Documentation (doc.py)")
+except AttributeError:
+    collectionsAbc = collections
+
+__author__ = "Sai Valla"
 __version__ = "0.2.1"
 __date__ = "2012-05-20"
 __license__ = "GNU GPL 3"
@@ -78,22 +80,27 @@ Tensor = List[Location]
 # Represents the display monitor to their respective index
 DisplayMap = Dict[int, Location]
 
-# Globals used for config
-AUTO_FLOAT_CONVERT = False
-AUTO_RESIZE = False
-SNAP_LOCATION = 0
-CUSTOM_PERCENTAGE = 50
-RC_FILE_NAME = "floatrc"
-DEFAULT_GRID = {"rows": 2, "cols": 2}
-# Follows CSS format
-# [Top, Right, Bottom, Left]
-TILE_OFFSET = [0, 0, 0, 0]
-DISPLAY_MONITORS = {
-    "eDP1",
-    "HDMI1",
-    "VGA",
-}
+# Single global for a cleaner shared interface
+_CONFIG_GLOBALS = {k: v for k, v in zip(
+    [  # snake case keys are non-config keys (unique to implementation only)
+     'AutoConvertToFloat', 'AutoResize', 'SnapLocation', 'DefaultGrid',
+     'GridOffset', 'DisplayMonitors', 'SocketPort', 'custom_percentage',
+     'rc_file_name', 'DefaultResetPercentage'],
+    [  # default values for config without any configuration
+     True, True, 0, {"Rows": 2, "Columns": 2},
+     [0, 0, 0, 0], {"eDP1", "HDMI1", "VGA"}, 65433, 50,
+     'floatrc', 75]
+)}
+
+# Logger for stdout
+logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s |%(lineno)d]: %(message)s')
+logger = logging.getLogger(__name__)
 # TODO: handle multiple monitor (behind summation) offset
+# TODO: range select grid
+# TODO: 4*4 rofi
+# TODO: float, center, snap all
 
 
 class Middleware:
@@ -101,17 +108,22 @@ class Middleware:
     Utilizes sockets for instance communication."""
 
     host = "127.0.0.1"
-    port = 65433
+    port = _CONFIG_GLOBALS['SocketPort']
 
     def __init__(self,) -> None:
         super().__init__()
 
+    def sync_data(self) -> None:
+        global _CONFIG_GLOBALS
+        Middleware.port = _CONFIG_GLOBALS['SocketPort']
+
     def start_server(self, data_mapper: collectionsAbc.Callable):
         """Begins an AF_INET server at the given
         port to listen for floatwm middleware."""
+        self.sync_data()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
-            print(f"Binding to: {Middleware.host}/{Middleware.port}")
+            logger.info(f"Binding to: {Middleware.host}/{Middleware.port}")
             s.bind((Middleware.host, Middleware.port))
             s.listen()
             while True:
@@ -201,28 +213,24 @@ class Utils:
         try:
             if not elem:
                 return [int(i) for i in sys.argv[1:]] or [4, 4]
-
             if elem > len(sys.argv[1:]):
                 return None
             elif len(sys.argv[1:]) < 2:
                 return [4, 4][elem]
             return int(sys.argv[elem])
-
         except ValueError:
             return [4, 4]
 
     @staticmethod
     def read_config() -> None:
-        global DISPLAY_MONITORS, RC_FILE_NAME
-        global AUTO_FLOAT_CONVERT, DEFAULT_GRID
-        global SNAP_LOCATION, AUTO_RESIZE
-        global TILE_OFFSET
-
+        global _CONFIG_GLOBALS
+        rc = _CONFIG_GLOBALS['rc_file_name']
         default_locs = [
-            f"~/.config/i3float/{RC_FILE_NAME}" f"~/.config/{RC_FILE_NAME}",
-            f"~/.{RC_FILE_NAME}",
+            f"~/.config/i3float/{rc}",
+            f"~/.config/{rc}",
+            f"~/.{rc}",
             os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), f".{RC_FILE_NAME}"
+                os.path.dirname(os.path.abspath(__file__)), f".{rc}"
             ),
         ]
         target_loc = None
@@ -237,7 +245,6 @@ class Utils:
                 "Add to ~/.floatrc or ~/.config/floatrc "
                 "or ~/.config/i3float/floatrc"
             )
-
         with open(target_loc, "r") as f:
             config = yaml.safe_load(f)
         if not config or "Settings" not in config:
@@ -246,84 +253,51 @@ class Utils:
                 " follow yaml guidelines and example."
             )
 
-        # This turned into a really bad design. I need
-        # to simply keep a global dictionary so we can dynamically
-        # parse the yaml file. I will do this after mvp.
-        # But this way is much more seralized for OOP (scalability).
-        snap_yml_key = "SnapLocation"
-        grid_yml_syn = ["Rows", "Columns"]
-        grid_yml_key = "DefaultGrid"
-        offs_yml_key = "GridOffset"
-        monitors_yml_key = "DisplayMonitors"
-        auto_yml_key = "AutoConvertToFloat"
-        resize_yml_key = "AutoResize"
-        port_yml_key = "SocketPort"
         settings = config["Settings"]
-
-        def verify(x):
-            x in settings
-
-        # Serialize config file
-        if verify(resize_yml_key):
-            AUTO_RESIZE = settings[resize_yml_key]
-        if verify(auto_yml_key):
-            AUTO_FLOAT_CONVERT = True if settings[auto_yml_key] else False
-        if verify(monitors_yml_key):
-            DISPLAY_MONITORS = tuple(m for m in settings[monitors_yml_key])
-        if verify(offs_yml_key):
-            TILE_OFFSET = settings[offs_yml_key]
-        if verify(grid_yml_key):
-            DEFAULT_GRID = {
-                "rows": settings[grid_yml_key][grid_yml_syn[0]],
-                "cols": settings[grid_yml_key][grid_yml_syn[1]],
-            }
-        if verify(port_yml_key):
-            Middleware.port = settings[port_yml_key]
-        if verify(snap_yml_key):
-            if isinstance(settings[snap_yml_key], int):
-                SNAP_LOCATION = settings[snap_yml_key]
-            else:
-                raise ValueError("Unexpected Snap location data type" "(expected int)")
+        for key in settings:
+            _CONFIG_GLOBALS[key] = settings[key]
+        print(_CONFIG_GLOBALS)
+        print('-'*20)
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
-        global SNAP_LOCATION, DEFAULT_GRID
-        global CUSTOM_PERCENTAGE, AUTO_RESIZE
-        global AUTO_FLOAT_CONVERT, TILE_OFFSET
-        r = "rows"
-        c = "cols"
-        t = "target"
-        p = "perc"
-        nr = "noresize"
-        nf = "nofloat"
-        po = "port"
-        o = "offset"
+        global _CONFIG_GLOBALS
+        cmdline_serializer = [
+            ("rows", "Rows"),
+            ("cols", "Columns"),
+            ("target", "target"),
+            ("perc", "DefaultResetPercentage"),
+            ("port", "SocketPort"),
+            ("offset", "GridOffset"),
+            (["noresize", "AutoResize"],),
+            (["nofloat", "AutoConvertToFloat"],)]
 
-        def verify(key): key in kwargs and kwargs[key]
-
-        if verify(r):
-            DEFAULT_GRID[r] = kwargs[r]
-        if verify(c):
-            DEFAULT_GRID[c] = kwargs[c]
-        if verify(t):
-            SNAP_LOCATION = kwargs[t]
-        if verify(p):
-            CUSTOM_PERCENTAGE = kwargs[p]
-        if verify(nr):
-            AUTO_RESIZE = not kwargs[nr]
-        if verify(nf):
-            AUTO_FLOAT_CONVERT = not kwargs[nf]
-        if verify(po):
-            Middleware.port = kwargs[po]
-        if verify(o):
+        def offset_test(o):
+            global _CONFIG_GLOBALS
             assert (
-                len(kwargs[o]) <= 4
+                len(o) <= 4
             ), "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
 
-            while len(kwargs[o]) != 4:
-                kwargs[o] += [0]
-            TILE_OFFSET = [int(i) for i in kwargs[o]]
-            TILE_OFFSET[1], TILE_OFFSET[3] = TILE_OFFSET[3], TILE_OFFSET[1]
+            while len(o) != 4:
+                o += [0]
+            _CONFIG_GLOBALS['GridOffset'] = [int(i) for i in o]
+            _CONFIG_GLOBALS['GridOffset'][1], _CONFIG_GLOBALS['GridOffset'][3] = (
+                _CONFIG_GLOBALS['GridOffset'][3], _CONFIG_GLOBALS['GridOffset'][1])
+
+        for cmd_rc in cmdline_serializer:
+            res = (kwargs[cmd_rc[0]]
+                   if isinstance(cmd_rc[0], str) else kwargs[cmd_rc[0][0]])
+            if not res:
+                continue
+            if len(cmd_rc) == 1:  # boolean configs
+                _CONFIG_GLOBALS[cmd_rc[0][1]] = False
+            elif cmd_rc[0] == 'offset':
+                offset_test(res)
+            else:
+                _CONFIG_GLOBALS[cmd_rc[1]] = res
+        print("On the flied")
+        print(_CONFIG_GLOBALS)
+        exit()
 
 
 class FloatUtils:
@@ -374,7 +348,7 @@ class FloatUtils:
         total_size = {}
         monitor_cnt = 0
         for display in self.displays:
-            if display["name"] not in DISPLAY_MONITORS:
+            if display["name"] not in _CONFIG_GLOBALS['DisplayMonitors']:
                 continue
             display_screen_location = Location(
                 width=display["rect"]["width"], height=display["rect"]["height"]
@@ -387,9 +361,10 @@ class FloatUtils:
 
     def get_wk_number(self) -> int:
         c_monitor = 0
+        print(self.displays)
         for display in self.displays:
-            print(display)
-            if display["name"] in DISPLAY_MONITORS:
+            # print(display)
+            if display["name"] in _CONFIG_GLOBALS['DisplayMonitors']:
                 if self.match(display):
                     break
                 c_monitor += 1
@@ -408,6 +383,27 @@ class FloatUtils:
     def get_i3_socket(self) -> Socket:
         return i3.Socket()
 
+    def get_xrandr_info(self) -> Location:
+        res = Utils.dipatch_bash_command("xrandr --query")
+        _err = "xrandr query returned unexpected results"
+        assert len(res) >= 50, _err
+        if b'current' not in res[:50]:
+            raise KeyError(_err)
+
+        data = [i for i in res[:50].split(b',') if b'current' in i]
+        assert len(data) == 1, _err
+
+        data = str(data[0].decode('ascii')).split(' ')
+        data = [int(i) for i in data if i.isnumeric()]
+        assert len(data) == 2, _err
+
+        return Location(data[0], data[1])
+
+    def xrandr_parser(self):
+        x = XRandR()
+        x.load_from_x()
+        return x.configuration
+
 
 class MonitorCalculator(FloatUtils):
     def __init__(self,) -> None:
@@ -421,18 +417,18 @@ class MonitorCalculator(FloatUtils):
         if mode == "resize" and self.cache_resz:
             return self.cache_resz
 
-        rows = DEFAULT_GRID["rows"]
-        cols = DEFAULT_GRID["cols"]
-        assert SNAP_LOCATION <= (rows * cols), "Incorrect Target in grid"
+        rows = _CONFIG_GLOBALS['DefaultGrid']['Rows']
+        cols = _CONFIG_GLOBALS['DefaultGrid']["Columns"]
+        assert _CONFIG_GLOBALS['SnapLocation'] <= (rows * cols), "Incorrect Target in grid"
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
         # if border:
         mode_defs = {
-            "snap": lambda *d: TILE_OFFSET[d[0]],
+            "snap": lambda *d: _CONFIG_GLOBALS['GridOffset'][d[0]],
             "resize": lambda *xy: int(
-                (TILE_OFFSET[xy[0]] + TILE_OFFSET[xy[1]]) / (xy[2] or 1)
-            ),
+                (_CONFIG_GLOBALS['GridOffset'][xy[0]] +
+                 _CONFIG_GLOBALS['GridOffset'][xy[1]]) / (xy[2] or 1)),
         }
         # [x, y] axis of grid index
         chosen_axis = self.find_grid_axis()
@@ -446,7 +442,7 @@ class MonitorCalculator(FloatUtils):
             self.cache_resz = Location(t_w - r_l, t_h - t_b,)
             return self.cache_resz
         elif mode == "snap":
-            per_offset = [int(i) for i in TILE_OFFSET]
+            per_offset = [int(i) for i in _CONFIG_GLOBALS['GridOffset']]
             return Location(width=per_offset[1], height=per_offset[0],)
 
         return Location(t_w, t_h)
@@ -458,15 +454,19 @@ class MonitorCalculator(FloatUtils):
         # 3) Monitor center - offset = true center
         # 3 if) tensors are intersecting
         display = self.area_matrix[self.workspace_num]
+        print("Got to display")
+        print(_CONFIG_GLOBALS)
+        # print(self.xrandr_parser())
+        # exit()
         window = self.get_target(self.focused_node)
-        if center or SNAP_LOCATION == 0:
+        if center or _CONFIG_GLOBALS['SnapLocation'] == 0:
             # Abs center (2, 2)
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
             )
         else:
             display_offset = target_offset = Location(0, 0)
-            target = SNAP_LOCATION
+            target = _CONFIG_GLOBALS['SnapLocation']
             # y, x adjusted for accessing matrix
             y, x = self.find_grid_axis()
             # 1 is the location (0 is the index)
@@ -481,8 +481,8 @@ class MonitorCalculator(FloatUtils):
 
     def find_grid_axis(self, loc: int = None):
         # row, col
-        loc = loc or SNAP_LOCATION
-        return divmod(loc - 1, DEFAULT_GRID["cols"])
+        loc = loc or _CONFIG_GLOBALS['SnapLocation']
+        return divmod(loc - 1, _CONFIG_GLOBALS['DefaultGrid']["Columns"])
 
     def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
         if self.cache_grid:
@@ -554,7 +554,7 @@ class Movements(MonitorCalculator):
     def custom_resize(self, **kwargs) -> None:
         Utils.dispatch_i3msg_com("custom", data=f"{CUSTOM_PERCENTAGE}ppt")
 
-    def get_target(self, node) -> None:
+    def get_target(self, node: dict) -> None:
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def snap_to_grid(self, **kwargs) -> None:
@@ -592,12 +592,12 @@ class FloatManager(Movements, Middleware):
         # partitioned for multiple commands
         self.post_commands()  # Sync to state
         # If not float, make float -> <movement>
-        if AUTO_FLOAT_CONVERT:
+        if _CONFIG_GLOBALS['AutoConvertToFloat']:
             self.make_float()
             self.post_commands()  # Resync to state
-        if AUTO_RESIZE:
+        if _CONFIG_GLOBALS['AutoResize']:
             self.make_resize()
-            # self.post_commands()  # Resync to state
+            self.post_commands()  # Resync to state
 
         executors = [
             self.move_to_center,
@@ -618,7 +618,7 @@ class FloatManager(Movements, Middleware):
         self.post_commands()  # Resync to state
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
-            args=({"modifying_node": self.focused_node},),
+            args=({"command": cmd, "modifying_node": self.focused_node},),
         ).start()  # Anonymous thread, since dataflow is unidirectional.
         self.com_map[cmd](**kwargs)
 
@@ -627,36 +627,21 @@ class FloatManager(Movements, Middleware):
         # Set the focused node
         self.assign_focus_node()
         self.float_grid = self.calculate_grid(
-            DEFAULT_GRID["rows"],
-            DEFAULT_GRID["cols"],
+            _CONFIG_GLOBALS['DefaultGrid']["Rows"],
+            _CONFIG_GLOBALS['DefaultGrid']["Columns"],
             self.area_matrix[self.workspace_num],
         )
 
 
-def debugger() -> None:
+def _debugger() -> None:
     """Evaluates user input expression."""
-    print("Entering debug mode. Evaluating input:")
+    logger.info("Entering debug mode. Evaluating input:")
     while 1:
         cmd = input(">>> ")
-        print(eval(cmd))
+        logger.info(eval(cmd))
 
 
-if __name__ == "__main__":
-    if "debug" in sys.argv:
-        debugger()
-        exit(0)
-
-    start = datetime.datetime.now()
-    try:
-        doc = Documentation()
-    except NameError:
-        print("Missing Documentation (doc.py)")
-        exit(1)
-
-    comx = list(doc.actions)
-    parser = doc.build_parser(choices=comx)
-    args = parser.parse_args()
-    # Check for sole commands (Static for now, only 1 value)
+def _sole_commands(args):
     if "listen" in args.actions:
         assert (
             len(args.actions)
@@ -667,9 +652,28 @@ if __name__ == "__main__":
         try:
             listener.start_server(data_mapper=print)
         except KeyboardInterrupt:
-            print("\nClosing Floatwm socket...")
+            logger.info("\nClosing Floatwm socket...")
         finally:
             exit(0)
+
+
+if __name__ == "__main__":
+    if "debug" in sys.argv:
+        _debugger()
+        exit(0)
+
+    start = datetime.datetime.now()
+    try:
+        doc = Documentation()
+    except NameError:
+        logger.critical("Missing Documentation (doc.py)")
+        exit(1)
+
+    comx = list(doc.actions)
+    parser = doc.build_parser(choices=comx)
+    args = parser.parse_args()
+    # Check for sole commands (Static for now, only 1 value)
+    _sole_commands(args)
 
     # Manager can simply be an unpacker to args,
     # rather than manual seralizing into kwargs.

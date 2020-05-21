@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""License:
-    Copyright (C) 2020 justahuman1
+""" GitHub: justahuman1
+    URL: https://github.com/justahuman1
+
+    License: GPL-3.0
+    Copyright (C) 2020 Sai Valla
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-#     GitHub: justahuman1
-#     URL: https://github.com/justahuman1
-#     License: GPL-3.0
-#         Copyright (C) 2020 justahuman1
-#          This program is free software: you can redistribute it and/or modify
-#          it under the terms of the GNU General Public License as published by
-#          the Free Software Foundation, either version 3 of the License, or
-#          (at your option) any later version.
+#   GitHub: justahuman1
+#   URL: https://github.com/justahuman1
+#   License: GPL-3.0
+#     Copyright (C) 2020 Sai Valla
+#      This program is free software: you can redistribute it and/or modify
+#      it under the terms of the GNU General Public License as published by
+#      the Free Software Foundation, either version 3 of the License, or
+#      (at your option) any later version.
 
-#          This program is distributed in the hope that it will be useful,
-#          but WITHOUT ANY WARRANTY; without even the implied warranty of
-#          MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#          GNU General Public License for more details.
+#      This program is distributed in the hope that it will be useful,
+#      but WITHOUT ANY WARRANTY; without even the implied warranty of
+#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#      GNU General Public License for more details.
 
-#          You should have received a copy of the GNU General Public License
-#          along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#      You should have received a copy of the GNU General Public License
+#      along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # ---- Rofi Frontend ----
 # src file absolute path
@@ -55,49 +55,40 @@ done
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
 # Path to the src python file
-src_file="$app_abs_path/floatwm.py"
+src_file="$app_abs_path/i3-grid/floatwm.py"
 
 if [[ "$len" -gt "1" ]]; then
     # if multi select
-
     # parse rofi multiselect
     declare -a arr
     arr=( $(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}') )
     if [ "$len" == "3" ]; then
-        if [ "${arr[0]}" == "1" ] || [ "${arr[0]}" == "3" ]; then
-            if [ ${arr[1]} == "3" ] || [ "${arr[1]}" == "1" ]; then
-                # Left half align
-                python  $src_file \
-                    float resize snap \
-                    --cols 2 --rows 1 --target 1
-            fi
-        fi
-        if [ "${arr[0]}" == "2" ] || [ "${arr[0]}" == "4" ]; then
-            if [ ${arr[1]} == "4" ] || [ "${arr[1]}" == "2" ]; then
-                # Right half align
-                python  $src_file \
-                    float resize snap \
-                    --cols 2 --rows 1 --target 2
-            fi
-        fi
-        if [ "${arr[0]}" == "1" ] || [ "${arr[0]}" == "2" ]; then
-            if [ ${arr[1]} == "2" ] || [ "${arr[1]}" == "1" ]; then
-                # Top half align
-                python  $src_file \
-                    float resize snap \
-                    --cols 1 --rows 2 --target 1
-            fi
-        fi
-        if [ "${arr[0]}" == "3" ] || [ "${arr[0]}" == "4" ]; then
-            if [ ${arr[1]} == "4" ] || [ "${arr[1]}" == "3" ]; then
-                # Bottom half align
-                python  $src_file \
-                    float resize snap \
-                    --cols 1 --rows 2 --target 2
-            fi
+        if [ "${arr[0]}" == "1" ] && [ "${arr[1]}" == "3" ]; then
+            # Left half align
+            python  $src_file \
+                float resize snap \
+                --cols 2 --rows 1 --target 1
+        elif [ "${arr[0]}" == "2" ] && [ "${arr[1]}" == "4" ]; then
+            # Right half align
+            python  $src_file \
+                float resize snap \
+                --cols 2 --rows 1 --target 2
+        elif [ "${arr[0]}" == "1" ] && [ "${arr[1]}" == "2" ]; then
+            # Top half align
+            python  $src_file \
+                float resize snap \
+                --cols 1 --rows 2 --target 1
+        elif [ "${arr[0]}" == "3" ] && [ "${arr[1]}" == "4" ]; then
+            # Bottom half align
+            python  $src_file \
+                float resize snap \
+                --cols 1 --rows 2 --target 2
         fi
     elif [ "$len" == "7" ]; then
         echo "Full screen?"
+        python  $src_file \
+            float resize snap \
+            --cols 1 --rows 1 --target 1
     fi
 
     exit
