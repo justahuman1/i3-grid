@@ -1,18 +1,18 @@
-# License:
-#     Copyright (C) 2020 justahuman1
-#
-#     This program is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  License: GPL-3.0
+#  Copyright (C) 2020 justahuman1
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # rc file may be in the following paths:
 # ~/.config/i3float/floatrc
@@ -43,8 +43,8 @@ Settings:
     DefaultGrid:
         # These are the only two grid attributes
         # int (Recommended range: 2-4 for laptops, 2-8 for monitors)
-        Rows: 3
-        Columns: 3
+        Rows: 4
+        Columns: 4
     GridOffset:
         # Offset from screen borders (useful for polybar, etc.)
         # Order matters here.

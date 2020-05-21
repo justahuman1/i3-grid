@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# License:
-#     Copyright (C) 2020 Sai Valla
+#  License: GPL-3.0
+#  Copyright (C) 2020 Sai Valla
 
-#     This program is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from argparse import (
     SUPPRESS,
@@ -93,6 +93,10 @@ class Documentation:
                 " Python and command line (Listens on port flag or"
                 " default: 65433)"
             ),
+            "multi": (
+                "Stretch a window across a range of numbers"
+                " (The numbers must be continous and linear)"
+            )
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
@@ -119,6 +123,12 @@ class Documentation:
             "target": {
                 "type": "int",
                 "help": f"The grid location to snap the window to {_rc_def}",
+            },
+            "multis": {
+                "type": "int",
+                "nargs": "+",
+                "help": f"The range of numbers to strech the window across."
+                " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13' or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
             },
             "noresize": {"type": "bool", "help": _ova("resize")},
             "nofloat": {"type": "bool", "help": _ova("float")},
