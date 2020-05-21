@@ -125,7 +125,8 @@ class Documentation:
                 "help": f"The grid location to snap the window to {_rc_def}",
             },
             "multis": {
-                "type": "int",
+                "type": "str",
+                "action": "append",
                 "nargs": "+",
                 "help": f"The range of numbers to strech the window across."
                 " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13' or '1 13' (vertical)  or '1 8' (2 horizontal rows)",

@@ -77,7 +77,7 @@ Settings:
     # it can either prompt you, or automatically
     # convert to float without prompt.
     # boolean: true/false
-    AutoConvertToFloat: true
+    AutoConvertToFloat: false
 
     # If auto resize is true, snapping a window to
     # the target value in the grid will resize it
@@ -85,7 +85,7 @@ Settings:
     # Can be overridden on the fly (call resize
     # function manually)
     # boolean: true/false
-    AutoResize: true
+    AutoResize: false
 
     # Default port for listenening and sending
     # floatwm data. Can be used for additional scripting

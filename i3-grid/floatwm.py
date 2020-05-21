@@ -32,9 +32,8 @@ from typing import Dict, List
 
 import yaml
 
-import i3
-from i3 import Socket
-from xrandr.xrandr import XRandR
+from i3_utils import i3
+from i3_utils import xrandr
 
 """ i3_float_wm is a script to manage floating windows for the
 i3 tiling window manager. The code is split into several classes, which isolate
@@ -98,8 +97,7 @@ logging.basicConfig(
         level=logging.INFO,
         format='[%(asctime)s %(levelname)s |%(lineno)d]: %(message)s')
 logger = logging.getLogger(__name__)
-# TODO: range select grid
-# TODO: 4*4 rofi
+
 # TODO: float, center, snap all
 
 
@@ -379,7 +377,7 @@ class FloatUtils:
                 return False
         return True
 
-    def get_i3_socket(self) -> Socket:
+    def get_i3_socket(self) -> i3.Socket:
         return i3.Socket()
 
     def get_xrandr_info(self) -> Location:
@@ -399,7 +397,7 @@ class FloatUtils:
         return Location(data[0], data[1])
 
     def xrandr_parser(self):
-        x = XRandR()
+        x = xrandr.XRandR()
         x.load_from_x()
         return x.configuration
 
@@ -458,12 +456,12 @@ class MonitorCalculator(FloatUtils):
                 2, 2, display, window
             )
         else:
-            target = _CONFIG_GLOBALS['SnapLocation']
+            # target = _CONFIG_GLOBALS['SnapLocation']
             # y, x adjusted for accessing matrix
             y, x = self.find_grid_axis()
             # 1 is the location (0 is the index)
-            data = self.float_grid[y][x][1]
-            return self.xrandr_calulator(data)
+            data = self.float_grid[y][x][1]  # naive
+            return self.xrandr_calulator(data)  # monitor sync
 
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
@@ -527,6 +525,23 @@ class MonitorCalculator(FloatUtils):
         self.cache_grid = grid
         return grid
 
+    def multi_pnt_calc(self):
+        chosen_range = [int(i) for i in _CONFIG_GLOBALS['multis']]
+        mid = (min(chosen_range), max(chosen_range))
+        total_size = (_CONFIG_GLOBALS['DefaultGrid']['Rows'] *
+                      _CONFIG_GLOBALS['DefaultGrid']['Columns'])
+        assert (mid[0] <= total_size and
+                mid[1] <= total_size), "Incorrect grid inputs"
+
+        loc = [self.find_grid_axis(loc=mid[0]), self.find_grid_axis(loc=mid[1])]
+        self.per_quadrant_dim = Location(
+            (self.per_quadrant_dim.width +
+             self.per_quadrant_dim.width * (loc[1][1] - loc[0][1])),
+            (self.per_quadrant_dim.height +
+             self.per_quadrant_dim.height * (loc[1][0] - loc[0][0])))
+        self.make_resize()
+        return self.cache_grid[loc[0][0]][loc[0][1]]
+
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
             Location(int(window.width / rows), int(window.height / cols))
@@ -584,11 +599,15 @@ class Movements(MonitorCalculator):
         Utils.dispatch_i3msg_com(command="float")
 
     def multi_select(self, **kwargs) -> None:
+        """Supports selection ranges
+        that are continous and non-perpendicular."""
         if _CONFIG_GLOBALS['multis'] == 0:
-            self.move_to_center()
-            return
-        # TODO
-        exit()
+            return self.move_to_center()
+        elif len(_CONFIG_GLOBALS['multis']) == 1:
+            return self.move_to_center()
+
+        top_left = self.multi_pnt_calc()
+        Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left[1]))
 
 
 class FloatManager(Movements, Middleware):
