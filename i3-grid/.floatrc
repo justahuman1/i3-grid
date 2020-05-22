@@ -18,14 +18,14 @@
 # ~/.config/i3float/floatrc
 # ~/.config/floatrc
 # ~/.floatrc
-# ./.floatrc  --> Same path as script (floatwm.py)
+# ./.floatrc  --> Same path as script (i3-grid.py)
 
 MetaData:
     Name: i3-float-wm
     # We use yaml as the file type (easy to read, standard for most python configs)
     # so we do not have to parse custom rc format.
     ThisFileType: yaml
-    Source: floatwm.py
+    Source: i3-grid.py
 Settings:
 # All of the following settings can be overridden on the fly
 # via command line args. Ex: python i3float.py --<flag> overrideValue
@@ -73,11 +73,11 @@ Settings:
     # reset function will default the terminal to.
     DefaultResetPercentage: 75
 
-    # If you run floatwm on a non-floating window,
+    # If you run i3-grid on a non-floating window,
     # it can either prompt you, or automatically
     # convert to float without prompt.
     # boolean: true/false
-    AutoConvertToFloat: false
+    AutoConvertToFloat: true
 
     # If auto resize is true, snapping a window to
     # the target value in the grid will resize it
@@ -85,10 +85,10 @@ Settings:
     # Can be overridden on the fly (call resize
     # function manually)
     # boolean: true/false
-    AutoResize: false
+    AutoResize: true
 
     # Default port for listenening and sending
-    # floatwm data. Can be used for additional scripting
+    # i3-grid data. Can be used for additional scripting
     # Ex: Call a script when the socket sends a specific message.
     # Default if not specifed: 65433
     SocketPort: 65433

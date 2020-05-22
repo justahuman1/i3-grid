@@ -30,12 +30,12 @@ import threading
 from collections import namedtuple
 from typing import Dict, List
 
+import i3
 import yaml
 
-from i3_utils import i3
 from i3_utils import xrandr
 
-""" i3_float_wm is a script to manage floating windows for the
+""" i3-grid is a script to manage floating windows for the
 i3 tiling window manager. The code is split into several classes, which isolate
 the logic respective to its name. The process flow is as follows:
 
@@ -117,7 +117,7 @@ class Middleware:
 
     def start_server(self, data_mapper: collectionsAbc.Callable):
         """Begins an AF_INET server at the given
-        port to listen for floatwm middleware."""
+        port to listen for i3-grid middleware."""
         self.sync_data()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
@@ -175,7 +175,6 @@ class Utils:
     def dipatch_bash_command(command_str: str) -> str:
         if not command_str or command_str.strip() == "":
             raise ValueError("null command")
-
         out = subprocess.run(command_str.split(" "), stdout=subprocess.PIPE)
         return out.stdout
 
@@ -192,12 +191,10 @@ class Utils:
             "float": lambda *d: i3.floating("enable"),
             "reset": lambda *d: (
                 i3.resize("set", "75ppt", "75ppt")
-                and i3.move("window", " position", "center")
-            ),
+                and i3.move("window", " position", "center")),
             "custom": (
                 lambda *d: i3.resize("set", d[0], d[0])
-                and i3.move("window", "position", "center")
-            ),
+                and i3.move("window", "position", "center")),
         }
         if isinstance(data, str):
             dispatcher[command](data)
@@ -241,20 +238,19 @@ class Utils:
             logger.warning(
                 "No dotfile config found. "
                 "Add to ~/.floatrc or ~/.config/floatrc "
-                "or ~/.config/i3float/floatrc"
-            )
+                "or ~/.config/i3float/floatrc")
             return
         with open(target_loc, "r") as f:
             config = yaml.safe_load(f)
         if not config or "Settings" not in config:
             raise ValueError(
                 "Incorrect floatrc file sytax. Please"
-                " follow yaml guidelines and example."
-            )
+                " follow yaml guidelines and example.")
 
         settings = config["Settings"]
         for key in settings:
-            _CONFIG_GLOBALS[key] = settings[key]
+            if settings[key]:
+                _CONFIG_GLOBALS[key] = settings[key]
 
     @staticmethod
     def on_the_fly_override(**kwargs) -> None:
@@ -294,7 +290,8 @@ class Utils:
             elif arg == 'offset':
                 offset_test(kwargs[arg], cmdline_serializer[arg])
             elif arg in _auto_booleans:
-                _CONFIG_GLOBALS[cmdline_serializer[arg]] = False
+                if kwargs[arg]:
+                    _CONFIG_GLOBALS[cmdline_serializer[arg]] = False
             else:
                 _CONFIG_GLOBALS[cmdline_serializer[arg]] = kwargs[arg]
 
@@ -311,16 +308,39 @@ class FloatUtils:
 
     def assign_focus_node(self) -> None:
         tree = i3.get_tree()
-        # for node in tree:
         wkspc = [
-            node
-            for node in tree["nodes"]
-            if node["name"] == self.current_display["output"]
-        ]
+            node for node in tree["nodes"]
+            if node["name"] == self.current_display["output"]]
         assert len(wkspc) > 0, "window could not be found"
         self.iter = 0
         for w in wkspc:
             self.find_focused_window(w)
+        if args.all is None:
+            return
+
+        wkspc = [k['nodes'] for k in wkspc[0]['nodes'] if k['name'] == 'content'][0]
+        fcsd = [i for i in self.all_outputs if i['focused']][0]['name']
+
+        def grep_nest(obj, key, key2):
+            arr = []
+
+            def extract(obj, arr, key):
+                if isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if isinstance(v, (dict, list)):
+                            extract(v, arr, key)
+                        elif k == key:
+                            arr.append((obj[key2], v))
+                elif isinstance(obj, list):
+                    for item in obj:
+                        extract(item, arr, key)
+                return arr
+            results = extract(obj, arr, key)
+            return results
+
+        data = [k for k in wkspc if k['name'] == fcsd][0]
+        names = grep_nest(data, 'id', key2='name')
+        self.current_windows = [i for i in names if i[0] and i[0] != fcsd]
 
     def find_focused_window(self, node: dict) -> None:
         """Sets the focused_node attribute"""
@@ -354,7 +374,8 @@ class FloatUtils:
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
 
-        active = [i for i in i3.get_workspaces() if i["focused"]][0]
+        self.all_outputs = i3.get_workspaces()
+        active = [i for i in self.all_outputs if i["focused"]][0]
         self.active_output = active['output']
         return total_size, active
 
@@ -396,7 +417,7 @@ class FloatUtils:
 
         return Location(data[0], data[1])
 
-    def xrandr_parser(self):
+    def xrandr_parser(self) -> 'Configuration':
         x = xrandr.XRandR()
         x.load_from_x()
         return x.configuration
@@ -478,8 +499,8 @@ class MonitorCalculator(FloatUtils):
             if n == self.active_output:
                 th = orig_point.height + monitor['position'][1]
                 tw = orig_point.width + monitor['position'][0]
-                b = Location(tw, th)
-        return b
+                return Location(tw, th)
+        return orig_point
 
     def find_grid_axis(self, loc: int = None):
         # row, col
@@ -543,10 +564,8 @@ class MonitorCalculator(FloatUtils):
         return self.cache_grid[loc[0][0]][loc[0][1]]
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
-        return [
-            Location(int(window.width / rows), int(window.height / cols))
-            for window in windows
-        ]
+        return [Location(int(window.width / rows), int(window.height / cols))
+                for window in windows]
 
 
 class Movements(MonitorCalculator):
@@ -569,6 +588,7 @@ class Movements(MonitorCalculator):
     def make_resize(self, **kwargs) -> None:
         target_size = self.per_quadrant_dim
         Utils.dispatch_i3msg_com("resize", data=target_size)
+        self.post_commands()
 
     def custom_resize(self, **kwargs) -> None:
         cp = _CONFIG_GLOBALS['DefaultResetPercentage']
@@ -578,12 +598,10 @@ class Movements(MonitorCalculator):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def snap_to_grid(self, **kwargs) -> None:
-        """Moves the focused window to
-        the target (default: 0) position in
-        current grid (default: 2*2)"""
-        target_pos = self.get_target(self.focused_node)
-        true_center = self.get_offset(center=False,)
-
+        """Moves the focused window to the target
+        (default: 0) position in current grid (default: 2*2)"""
+        true_center = kwargs['tc'] if 'tc' in kwargs else self.get_offset(
+                      center=False,)
         Utils.dispatch_i3msg_com("move", true_center)
 
     def reset_win(self, **kwargs) -> None:
@@ -592,11 +610,11 @@ class Movements(MonitorCalculator):
         Utils.dispatch_i3msg_com(command="reset")
 
     def make_float(self, **kwargs) -> None:
-        """Moves the current window into float mode
-        if it is not float. If float, do nothing. Does not
-        resize (feel free to combine) but i3 does so by default
-        sometimes (based on config and instance rules)."""
+        """Moves the current window into float mode if it is not float.
+        If float, do nothing. Does not resize (feel free to combine) but i3
+        does so by default sometimes (based on config and instance rules)."""
         Utils.dispatch_i3msg_com(command="float")
+        self.post_commands()
 
     def multi_select(self, **kwargs) -> None:
         """Supports selection ranges
@@ -609,6 +627,19 @@ class Movements(MonitorCalculator):
         top_left = self.multi_pnt_calc()
         Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left[1]))
 
+    def all_override(self, commands: list, target: int) -> None:
+        global _CONFIG_GLOBALS
+
+        def constructor(c): return f"""i3-msg [con_id="{c}"] floating enable focus"""
+        _CONFIG_GLOBALS['SnapLocation'] = 1
+        for cmd in commands:
+            for w in self.current_windows:
+                dim = constructor(w[1])
+                Utils.dipatch_bash_command(dim)  # float and focus
+                self.make_resize()  # Resize
+                self.snap_to_grid()  # add to grid
+                _CONFIG_GLOBALS['SnapLocation'] += 1  # iterate target
+
 
 class FloatManager(Movements, Middleware):
     def __init__(self, **kwargs) -> None:
@@ -618,29 +649,27 @@ class FloatManager(Movements, Middleware):
         Utils.read_config()
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(**kwargs)
-
-        # Run initalizing commands
-        # partitioned for multiple commands
+        # 3) Run initalizing commands
         self.post_commands()  # Sync to state
-        # If not float, make float -> <movement>
+        # 4) Transform to global flags
         if _CONFIG_GLOBALS['AutoConvertToFloat']:
             self.make_float()
-            self.post_commands()  # Resync to state
         if _CONFIG_GLOBALS['AutoResize']:
             self.make_resize()
-            self.post_commands()  # Resync to state
 
-        executors = [
-            self.move_to_center,
-            self.make_float,
-            self.make_resize,
-            self.snap_to_grid,
-            self.custom_resize,
-            self.reset_win,
-            self.start_server,
-            self.multi_select,
-        ]
-        self.com_map = {c: e for c, e in zip(kwargs["commands"], executors)}
+        self.com_map = {c: e for c, e in zip(kwargs["commands"],
+                        [self.move_to_center,
+                        self.make_float,
+                        self.make_resize,
+                        self.snap_to_grid,
+                        self.custom_resize,
+                        self.reset_win,
+                        self.start_server,
+                        self.multi_select])}
+
+        if kwargs['all'] is not None and kwargs['all']:  # All flag override
+            self.all_override(kwargs['actions'], target=kwargs['all'])
+            exit(0)
 
     def run_command(self, cmd: str, **kwargs) -> None:
         """Commands that must be refreshed on
@@ -650,7 +679,8 @@ class FloatManager(Movements, Middleware):
         self.post_commands()  # Resync to state
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
-            args=({"command": cmd, "modifying_node": self.focused_node},),
+            args=({"command": cmd, "modifying_node": self.focused_node,
+                   'grid': self.cache_grid, 'monitors': self.displays},),
         ).start()  # Anonymous thread, since dataflow is unidirectional.
         self.com_map[cmd](**kwargs)
 
@@ -661,8 +691,7 @@ class FloatManager(Movements, Middleware):
         self.float_grid = self.calculate_grid(
             _CONFIG_GLOBALS['DefaultGrid']["Rows"],
             _CONFIG_GLOBALS['DefaultGrid']["Columns"],
-            self.area_matrix[self.workspace_num],
-        )
+            self.area_matrix[self.workspace_num])
 
 
 def _debugger() -> None:
@@ -684,7 +713,7 @@ def _sole_commands(args):
         try:
             listener.start_server(data_mapper=print)
         except KeyboardInterrupt:
-            logger.info("\nClosing Floatwm socket...")
+            logger.info("\nClosing i3-grid socket...")
         finally:
             exit(0)
 
@@ -714,6 +743,5 @@ if __name__ == "__main__":
         manager.run_command(cmd=action)
 
     end = datetime.datetime.now()
-    print("Total Time: ", end - start)
-
+    logger.info(f"Total Time: {end - start}")
     exit(0)

@@ -55,6 +55,7 @@ grid+=(
   "R" # Reset to i3 default center (75% screen)
   "X" # Custom col, row, target parsing
   "G" # Guake style window
+  "A" # Apply snap to all windows in current workspace
 )
 # Without the swap, we can make it dynamic and allow on the fly
 # grids. We need to change our python library to adjust for this.
@@ -85,33 +86,40 @@ elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
     exit
 fi
 
-# Single select options (These can also be combined!)
-if [[ "$chosen"  ==  "0" ]]; then
-    python  $src_file float resize snap --target 0
-elif [[ "$chosen"  ==  "C" ]]; then # Custom center size
-    p="$($rofi_command -dmenu -p "% -" -selected-row 0)"
-    python $src_file csize --perc=$p
-elif [[ "$chosen"  ==  "D" ]]; then  # Default
-    target="$($rofi_command -dmenu -p 'Target:' -selected-row 0)"
-    python $src_file float resize snap --target $target
-elif [[ "$chosen"  ==  "R" ]]; then
-    python $src_file float reset
-elif [[ "$chosen"  ==  "G" ]]; then  # Guake style
+case "$chosen" in
+"A")
+  python $src_file snap --all
+;;
+"C")
+  p="$($rofi_command -dmenu -p "% -" -selected-row 0)"
+  python $src_file csize --perc=$p
+;;
+"D")
+  target="$($rofi_command -dmenu -p 'Target:' -selected-row 0)"
+  python $src_file float resize snap --target $target
+;;
+"G")
   _h=$(( $COLS * 2 ))
   python $src_file multi --multis 1 $_h --offset 0 130 0 150
-elif [[ "$chosen"  ==  "X" ]]; then
-    custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"
-    IFS=' ' read -ra r_c_t <<< "$custom"
-    if [[ "${#r_c_t[@]}" != "3" ]]; then
-        echo "Incorrect Argument Length (Need Row, Col, Target)"
-        exit
-    fi
-    python $src_file \
-      float resize snap  \
-      --cols ${r_c_t[0]} --rows ${r_c_t[1]}  \
-      --target ${r_c_t[2]}
-else
-  echo "python $src_file float snap --cols $COLS --rows $LINES --target $chosen"
+;;
+"R")
+  python $src_file float reset
+;;
+"X")
+  custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"
+  IFS=' ' read -ra r_c_t <<< "$custom"
+  if [[ "${#r_c_t[@]}" != "3" ]]; then
+    echo "Incorrect Argument Length (Need Row, Col, Target)"
+    exit
+  fi
+  python $src_file \
+    float resize snap  \
+    --cols ${r_c_t[0]} --rows ${r_c_t[1]}  \
+    --target ${r_c_t[2]}
+;;
+*)
+  # Uncomment to see the raw command sent to i3-grid
+  # echo "python $src_file float snap --cols $COLS --rows $LINES --target $chosen"
   python $src_file float snap --cols $COLS --rows $LINES --target $chosen
-fi
-
+;;
+esac

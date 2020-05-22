@@ -1,5 +1,5 @@
 # i3 (Python module for communicating with i3 window manager)
-# Copyright (C) 2012  Jure Ziberna
+# Copyright (C) 2012 Jure Ziberna
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

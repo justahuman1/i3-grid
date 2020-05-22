@@ -101,20 +101,16 @@ class Documentation:
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
-        _ova = lambda auto: f"Override auto {auto} on the fly {{bool}}"
+        _ova = lambda auto: f"Override auto {auto} on the fly to be false"
         self.flags = {
             "cols": {"type": "int", "help": _slc_txt("col")},
             "rows": {"type": "int", "help": _slc_txt("row")},
-            "all": {
-                "type": "int",
-                "help": "Applies the action (permitted only for float"
-                "and snap) to all windows in the int workspace",
-            },
             "offset": {
                 "type": "str",
                 "action": "append",
                 "nargs": "+",
-                "help": "On the fly offset per window",
+                "help": "On the fly offset per window"
+                " {Array[top, right, bottom, left]}",
             },
             "perc": {
                 "type": "int",
@@ -131,13 +127,17 @@ class Documentation:
                 "help": f"The range of numbers to strech the window across."
                 " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13' or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
             },
-            "noresize": {"type": "bool", "help": _ova("resize")},
-            "nofloat": {"type": "bool", "help": _ova("float")},
             "port": {
                 "type": "int",
-                "help": "The port number to listen for floatwm events (Overrid"
+                "help": "The port number to listen for i3-grid events (Overrid"
                 "ing port for server requires overriding for the client also)",
             },
+        }
+        self.state_flags = {
+            "all": "Applies the actions (excluding snap) to all windows"
+            " in the current workspace. Auto floats and resizes!",
+            "noresize": _ova("resize"),
+            "nofloat": _ova("float"),
         }
 
     def build_parser(self, choices: list) -> ArgumentParser:
@@ -155,15 +155,15 @@ class Documentation:
             help=self.action_header(),
         )
 
-        for flag in self.flags:
+        for n, flag in self.flags.items():
             parser.add_argument(
-                f"--{flag}",
-                type=eval(self.flags[flag]["type"]),
-                nargs=self.flags[flag]["nargs"]
-                if "nargs" in self.flags[flag]
-                else None,
-                help=self.flags[flag]["help"],
+                f"--{n}",
+                type=eval(flag["type"]) if "type" in flag else None,
+                nargs=flag["nargs"] if "nargs" in flag else None,
+                help=flag["help"],
             )
+        for n, desc in self.state_flags.items():
+            parser.add_argument(f"--{n}", action="store_true", help=desc)
 
         group = parser.add_argument_group(title="Actions")
         for action, desc in self.actions.items():
@@ -173,12 +173,12 @@ class Documentation:
     def action_header(self) -> str:
         return """Actions are the functions to execute on the current window.
                   Order of operations matters here. For Example:
-                  "python floatwm.py center float --target 3"
+                  "python i3-grid.py center float --target 3"
                   We can assume that this command is for a tiled window
                   (as the user passed an option to make the window float).
                   This will try to center the window to grid position 3 but
                   fails, as it is not floating. The proper order would be:
-                  "python floatwm.py float center --target 3"
+                  "python i3-grid.py float center --target 3"
                   A minimum of one action is required to run the script."""
 
     def action_choices(self) -> str:

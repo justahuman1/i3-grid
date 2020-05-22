@@ -60,6 +60,7 @@ window {
   height: 180px;
   x-offset: -0.5%;
   border: 0;
+  padding: 0 0 0 50;
 }
 mainbox {
   children: [ inputbar, listview ];
@@ -67,7 +68,6 @@ mainbox {
   border: 0px;
   border-radius: 12px;
   background-color: @bg;
-  border-radius: 12;
   padding: 10 0 0 0;
 }
 listview {
@@ -109,6 +109,7 @@ inputbar {
   background-color: #242222;
   border: 0 0 1 0;
   border-color: #ffffff0A;
+  border-radius: 5;
 }
 prompt {
   enabled: true;

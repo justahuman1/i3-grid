@@ -1,6 +1,6 @@
-# i3 Floating WM
+# i3-grid
 
-i3, our beloved window manager, is just that. A tiling window manager. It lets the user handle the floating components themselves, while providing many tools to do so (scratchpads, marks, etc). The lack of standard tools has resulted in personalized scripts scattered throughout GitHub without a standardized manner to combat floating windows. Not for long! This script aims to allow for fast floating window management with minimal input. Oh yeah, it's also monitor agnostic!
+i3, our beloved window manager, is just that. A tiling window manager. It lets the user handle the floating components themselves, while providing many tools to do so (scratch pads, marks, etc). The lack of standard tools has resulted in personalized scripts scattered throughout GitHub without a standardized manner to combat floating windows. Not for long! This script aims to allow for fast floating window management with minimal input. Oh yeah, it's also monitor agnostic!
 
 ## Demo:
 
@@ -11,31 +11,37 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 ## Features
 
 - Reshape and pin floating windows to any precise locations on screen
-- Rofi \*frontend (Fully customizable)
-- Python CLI and Library (includes event listeners for additional callbacks)
-- On the fly workspaces
+- Intuitive rofi \*frontend (Fully customizable)
+- Full-featured CLI and Library; includes event listeners (via streaming socket data)
+- On the fly workspaces (apply actions to multiple windows)
 - Deep customization with powerful out of the box features
-- Support Multiple Monitor Setups
+- Supports Multiple Monitor Setups
 
-\*<sub>Rofi not necessary for functionality (seperate dmenu layer)</sub>
+\*<sub>Rofi not necessary for functionality (separate dmenu layer)</sub>
 
 ## Todos
 
 PR's very welcome. Order of importance will be according to issues and PR count.
 
-- Templating feature for quick floating env startup (Current Top Priority)
-- Deep scratchpad integration (Drop-down list)
-- Remember Previous option and automatically follow trend (cache)
-- Dynamic Rofi menu (width, height) to rc config settings
+- Templating feature for quick floating env startup (Top Current Priority)
+- Deep scratch pad integration (Drop-down list and temporary pads)
+- Remember Previous option and sequentially follow the grid trend (cache)
+- Dynamic Rofi menu (width, height) to personal rc config settings
 - Additional Options:
-  - Send all floating windows to a temporary scratchpad (accessible via rofi)
+  - Send all floating windows to a temporary scratch pad (accessible via rofi)
   - Fill the remaining of the floating screen with new window (Recursive stack)
   - Add a history options to Rofi Menu (Previously ran commands)
   - Advanced Rofi menu (allowing complex command generation on the fly)
   - Daemon to listen for screen changes and make background window transformations
-    - Probably will need to be written in C.
+    - Probably will need to be written in C (performance concerns).
+
+## Recently Added
+
+- Transform all windows in the current screen with a single command (`all` flag)!
+- Dynamic monitor sizing (xrandr parsing)
 
 ## Known Bugs
 
 - ~~Multi-select offset resizing (Does not respect all offsets)~~
 - ~~Left & Right offsets are inaccurate (Applies to both sides)~~
+- ~~Multiple Monitors are not supported~~

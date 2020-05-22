@@ -1,6 +1,6 @@
 # ARandR -- Another XRandR GUI
-# Copyright (C) 2008 -- 2011 chrysn <chrysn@fsfe.org>
-# Modified for i3-grid -- 2020
+# Copyright (C) 2008 - 2011 chrysn <chrysn@fsfe.org>
+# Modified for i3-grid - 2020
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
