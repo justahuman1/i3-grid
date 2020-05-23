@@ -89,7 +89,7 @@ _CONFIG_GLOBALS = {k: v for k, v in zip(
     [  # default values for config without rc file
      True, True, 0, {"Rows": 2, "Columns": 2},
      [0, 0, 0, 0], {"eDP1", "HDMI1", "VGA"}, 65433, 0,
-     'floatrc', 75]
+     'i3gridrc', 75]
 )}
 
 # Logger for stdout
@@ -204,6 +204,12 @@ class Utils:
             dispatcher[command](w, h)
 
     @staticmethod
+    def i3_custom(cmd, id: str =None):
+        _b = "i3-msg"  # Multiline string is necessary here (i3 encoding)
+        return f"""{_b} [con_id="{id}"] {cmd}""" if cmd else (
+                """{_b} {cmd}""")
+
+    @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
         try:
             if not elem:
@@ -221,13 +227,10 @@ class Utils:
         global _CONFIG_GLOBALS
         rc = _CONFIG_GLOBALS['rc_file_name']
         default_locs = [
-            f"~/.config/i3float/{rc}",
+            f"~/.config/i3grid/{rc}",
             f"~/.config/{rc}",
             f"~/.{rc}",
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), f".{rc}"
-            ),
-        ]
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), f".{rc}")]
         target_loc = None
         for loc in default_locs:
             if os.path.isfile(loc):
@@ -236,20 +239,20 @@ class Utils:
 
         if not target_loc:
             logger.warning(
-                "No dotfile config found. "
-                "Add to ~/.floatrc or ~/.config/floatrc "
-                "or ~/.config/i3float/floatrc")
-            return
+                "No dotfile config found."
+                " Add to ~/.i3gridrc or ~/.config/i3gridrc"
+                " or ~/.config/i3grid/i3gridrc")
+
         with open(target_loc, "r") as f:
             config = yaml.safe_load(f)
         if not config or "Settings" not in config:
             raise ValueError(
-                "Incorrect floatrc file sytax. Please"
+                "Incorrect i3gridrc file sytax. Please"
                 " follow yaml guidelines and example.")
 
         settings = config["Settings"]
         for key in settings:
-            if settings[key]:
+            if settings[key] is not None:
                 _CONFIG_GLOBALS[key] = settings[key]
 
     @staticmethod
@@ -321,7 +324,7 @@ class FloatUtils:
         wkspc = [k['nodes'] for k in wkspc[0]['nodes'] if k['name'] == 'content'][0]
         fcsd = [i for i in self.all_outputs if i['focused']][0]['name']
 
-        def grep_nest(obj, key, key2):
+        def grep_nest(obj, key, key2, key3):  # TODO: change keys to kwargs
             arr = []
 
             def extract(obj, arr, key):
@@ -330,7 +333,7 @@ class FloatUtils:
                         if isinstance(v, (dict, list)):
                             extract(v, arr, key)
                         elif k == key:
-                            arr.append((obj[key2], v))
+                            arr.append((obj[key2], v, obj[key3]))
                 elif isinstance(obj, list):
                     for item in obj:
                         extract(item, arr, key)
@@ -339,8 +342,9 @@ class FloatUtils:
             return results
 
         data = [k for k in wkspc if k['name'] == fcsd][0]
-        names = grep_nest(data, 'id', key2='name')
+        names = grep_nest(data, 'id', key2='name', key3="floating")
         self.current_windows = [i for i in names if i[0] and i[0] != fcsd]
+        self.current_floating_windows = [i for i in self.current_windows]
 
     def find_focused_window(self, node: dict) -> None:
         """Sets the focused_node attribute"""
@@ -437,7 +441,8 @@ class MonitorCalculator(FloatUtils):
 
         rows = _CONFIG_GLOBALS['DefaultGrid']['Rows']
         cols = _CONFIG_GLOBALS['DefaultGrid']["Columns"]
-        assert _CONFIG_GLOBALS['SnapLocation'] <= (rows * cols), "Incorrect Target in grid"
+        assert _CONFIG_GLOBALS['SnapLocation'] <= (
+               rows * cols), "Incorrect Target in grid"
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
@@ -445,8 +450,7 @@ class MonitorCalculator(FloatUtils):
             "snap": lambda *d: _CONFIG_GLOBALS['GridOffset'][d[0]],
             "resize": lambda *xy: int(
                 (_CONFIG_GLOBALS['GridOffset'][xy[0]] +
-                 _CONFIG_GLOBALS['GridOffset'][xy[1]]) / (xy[2] or 1)),
-        }
+                 _CONFIG_GLOBALS['GridOffset'][xy[1]]) / (xy[2] or 1))}
         # [x, y] axis of grid index
         chosen_axis = self.find_grid_axis()
         cur_axis = self.find_grid_axis(loc=loc)
@@ -459,8 +463,9 @@ class MonitorCalculator(FloatUtils):
             self.cache_resz = Location(t_w - r_l, t_h - t_b,)
             return self.cache_resz
         elif mode == "snap":
-            per_offset = [int(i) for i in _CONFIG_GLOBALS['GridOffset']]
-            return Location(width=per_offset[1], height=per_offset[0],)
+            # per_offset = [int(i) for i in _CONFIG_GLOBALS['GridOffset']]
+            return Location(width=_CONFIG_GLOBALS['GridOffset'][1],
+                            height=_CONFIG_GLOBALS['GridOffset'][0])
 
         return Location(t_w, t_h)
 
@@ -501,6 +506,9 @@ class MonitorCalculator(FloatUtils):
                 tw = orig_point.width + monitor['position'][0]
                 return Location(tw, th)
         return orig_point
+
+    def get_target(self, node: dict) -> None:
+        return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def find_grid_axis(self, loc: int = None):
         # row, col
@@ -588,14 +596,10 @@ class Movements(MonitorCalculator):
     def make_resize(self, **kwargs) -> None:
         target_size = self.per_quadrant_dim
         Utils.dispatch_i3msg_com("resize", data=target_size)
-        self.post_commands()
 
     def custom_resize(self, **kwargs) -> None:
         cp = _CONFIG_GLOBALS['DefaultResetPercentage']
         Utils.dispatch_i3msg_com("custom", data=f"{cp}ppt")
-
-    def get_target(self, node: dict) -> None:
-        return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def snap_to_grid(self, **kwargs) -> None:
         """Moves the focused window to the target
@@ -614,7 +618,11 @@ class Movements(MonitorCalculator):
         If float, do nothing. Does not resize (feel free to combine) but i3
         does so by default sometimes (based on config and instance rules)."""
         Utils.dispatch_i3msg_com(command="float")
-        self.post_commands()
+
+    def hide_scratchpad(self, **kwargs) -> None:
+        id = kwargs['id'] if 'id' in kwargs else None
+        dim = Utils.i3_custom("scratchpad show", id)
+        Utils.dipatch_bash_command(dim)
 
     def multi_select(self, **kwargs) -> None:
         """Supports selection ranges
@@ -629,16 +637,16 @@ class Movements(MonitorCalculator):
 
     def all_override(self, commands: list, target: int) -> None:
         global _CONFIG_GLOBALS
+        passive_actions = {'resize', 'float'}
 
-        def constructor(c): return f"""i3-msg [con_id="{c}"] floating enable focus"""
         _CONFIG_GLOBALS['SnapLocation'] = 1
         for cmd in commands:
             for w in self.current_windows:
-                dim = constructor(w[1])
-                Utils.dipatch_bash_command(dim)  # float and focus
-                self.make_resize()  # Resize
-                self.snap_to_grid()  # add to grid
-                _CONFIG_GLOBALS['SnapLocation'] += 1  # iterate target
+                dim = Utils.i3_custom("focus", w[1])
+                Utils.dipatch_bash_command(dim)  # focus
+                self.com_map[cmd]()  # Call user function (pass win id)
+                if cmd not in passive_actions:  # iterate target
+                    _CONFIG_GLOBALS['SnapLocation'] += 1
 
 
 class FloatManager(Movements, Middleware):
@@ -663,6 +671,7 @@ class FloatManager(Movements, Middleware):
                         self.make_resize,
                         self.snap_to_grid,
                         self.custom_resize,
+                        self.hide_scratchpad,
                         self.reset_win,
                         self.start_server,
                         self.multi_select])}
@@ -723,7 +732,7 @@ if __name__ == "__main__":
         _debugger()
         exit(0)
 
-    start = datetime.datetime.now()
+    # start = datetime.datetime.now()
     try:
         doc = Documentation()
     except NameError:
@@ -736,12 +745,12 @@ if __name__ == "__main__":
     # Check for sole commands (Static for now, only 1 value)
     _sole_commands(args)
 
-    # Manager can simply be an unpacker to args,
+    # Manager can simply be a unpacked to args,
     # rather than manual seralizing into kwargs.
     manager = FloatManager(commands=comx, **args.__dict__,)
     for action in args.actions:
         manager.run_command(cmd=action)
 
-    end = datetime.datetime.now()
-    logger.info(f"Total Time: {end - start}")
+    # end = datetime.datetime.now()
+    # logger.info(f"Total Time: {end - start}")
     exit(0)

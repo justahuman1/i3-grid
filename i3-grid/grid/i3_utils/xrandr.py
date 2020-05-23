@@ -1,4 +1,4 @@
-# ARandR -- Another XRandR GUI
+# ARandR -- Another XRandR GUI: https://github.com/chrysn/arandr
 # Copyright (C) 2008 - 2011 chrysn <chrysn@fsfe.org>
 # Modified for i3-grid - 2020
 #
@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# pylint: disable=too-few-public-methods
-# pylint: wrong-import-position,missing-docstring,fixme
 
 import os
 import subprocess

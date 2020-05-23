@@ -18,44 +18,55 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # ---- Rofi Frontend ----
-# src file absolute path
-app_abs_path="/home/sai/Code/FullApps/quadrant"
-# Set rofi env vars for rasi config
-# Corresponds to grid numbers..
-export COLS=4
+# FIXME: Currently, the grid resizing is static. If you change it to a different
+# number, you *may need to change the height and width correspondingly in the rasi file.
+# Control rofi theming here (Deep configuration available in the rasi file)
+# Too many env vars will slow down the load time, hence limitation.
+
+## Theming
+export COLS=4   # Corresponds to grid layout of the screen (X,Y)
 export LINES=4
-rofi_command="rofi -i -theme $app_abs_path/rofi/matrix.rasi -multi-select"
+export BG="#000000"                     # Panel Background
+export TXT="#bdc3c3"                    # Text color
+export GRID_FONT="Iosevka 13"           # Font (Include size)
+export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
+export SBAR="#242222"                   # Search Bar background
 
-# Column and row chooser possibility
+## Initalize
 join() { local IFS="$1"; shift; echo "$*"; }
-
-# We can use a python function to dynamically generate the
-# grid for different canvases on the fly. Or maybe a small
-# awk code to swap every non != len(lines) number.
+# src file absolute path (if i3-grid is not installed)
+app_abs_path="/home/sai/Code/FullApps/quadrant"
+rofi_command="rofi -i -theme $app_abs_path/rofi/matrix.rasi -multi-select"
+# We use a bash function to dynamically generate the
+# grid for different canvases on the fly.
 grid=()
 _l=$(( $LINES - 1 ))
-carry=$COLS
+_carry=$COLS
 # Rofi aligned menu
-# rows --> Col transformation
+# rows --> Col transformation (This is why search index is wrong).
+# We can make this transformation on the Python side but speed tradeoff..
 for value in $(seq 1 $COLS); do
   grid+=($value)
   for i in $(seq 1 $_l); do
-    mew=$(( $value + $carry ))
+    mew=$(( $value + $_carry ))
     grid+=($mew)
     i=$(( $i + 1 ))
-    carry=$(( $COLS * $i ))
+    _carry=$(( $COLS * $i ))
   done
-  carry=$COLS
+  _carry=$COLS
 done
 
 # Custom Commands
 grid+=(
   "C" # Custom Percentage, center window (ofc, you can override otf)
-  "D" # Use default rc file rows and col nums to create grid and use input num as snap target
+  "D" # Use default rc file rows and col nums to create grid and use input as snap target
   "R" # Reset to i3 default center (75% screen)
   "X" # Custom col, row, target parsing
   "G" # Guake style window
   "A" # Apply snap to all windows in current workspace
+  "H" # Hide all workspace floating windows
+
+  ## FIXME: Add command here. Define it's call in the case statement below.
 )
 # Without the swap, we can make it dynamic and allow on the fly
 # grids. We need to change our python library to adjust for this.
@@ -70,17 +81,17 @@ done
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
 # Path to the src python file
-src_file="$app_abs_path/i3-grid/floatwm.py"
+src_file="$app_abs_path/i3-grid/grid/i3_grid.py"
 
-if [[ "$len" -gt "1" ]]; then
-  # if multi select
+if [[ "$len" -gt "2" ]]; then  # if multi select
   declare -a arr
   arr=( $(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}') )
   multi_arg=$(join ' ' ${arr[@]})
   python $src_file multi --multis $multi_arg
   exit
 elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
-    # whatever you want to do when arr doesn't contain value
+    # Catch for non-grid user input
+    # Ex: I run raw custom commands that I type into the grid (as outputted by rofi)
     echo "Error: Element Out of grid"
     python $src_file -h
     exit
@@ -100,10 +111,13 @@ case "$chosen" in
 ;;
 "G")
   _h=$(( $COLS * 2 ))
-  python $src_file multi --multis 1 $_h --offset 0 130 0 150
+  python $src_file multi --multis 1 $_h --offset 0 130 0 130
 ;;
 "R")
   python $src_file float reset
+;;
+"H")
+  python $src_file hide --all
 ;;
 "X")
   custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"
@@ -117,6 +131,12 @@ case "$chosen" in
     --cols ${r_c_t[0]} --rows ${r_c_t[1]}  \
     --target ${r_c_t[2]}
 ;;
+
+# Define custom calls here. Template (Ex: Using custom command 'O'):
+# "O")
+#   i3-grid <action> <optional-flags>
+# ;;
+
 *)
   # Uncomment to see the raw command sent to i3-grid
   # echo "python $src_file float snap --cols $COLS --rows $LINES --target $chosen"

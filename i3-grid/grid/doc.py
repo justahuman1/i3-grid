@@ -77,8 +77,7 @@ class Documentation:
             "center": "Center the focused window to a float window",
             "float": (
                 "Toggle the float of a window (overrides config file for"
-                "otf movements). Optional 'all' flag to float all windows"
-                "in sepecific workspace)"
+                "otf movements)"
             ),
             "resize": "Resize focused window (if float)",
             "snap": (
@@ -86,16 +85,17 @@ class Documentation:
                 "other actions). Arguments include rows, cols, and target"
             ),
             "csize": "Resize the window into a custom size of screen (1-100)",
-            "reset": "Resets the focused window into the middle occupying"
+            "hide": "Hide the current window to scratchpad (if scratchpad)."
+            " Can be combined with 'all' flag to clear floating windows in workspace"
             " 75ppt (i3 default) screen space",
+            "reset": "Resets the focused window into the middle occupying",
             "listen": (
                 "Socket Listener (sole action) for event binding in native"
                 " Python and command line (Listens on port flag or"
                 " default: 65433)"
             ),
             "multi": (
-                "Stretch a window across a range of numbers"
-                " (The numbers must be continous and linear)"
+                "Stretch a window across a range of numbers (Use flag 'multis')"
             ),
         }
         _rc_def = "(default in rc file)"
@@ -134,8 +134,7 @@ class Documentation:
             },
         }
         self.state_flags = {
-            "all": "Applies the actions (excluding snap) to all windows"
-            " in the current workspace. Auto floats and resizes!",
+            "all": "Applies the actions to all windows in current workspace",
             "noresize": _ova("resize"),
             "nofloat": _ova("float"),
         }

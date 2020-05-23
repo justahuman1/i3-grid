@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="i3-grid-justahuman1",
+    name="i3-grid-test",
     version="0.2.2",
     author="Sai Valla",
     author_email="justahuman1@github.com",

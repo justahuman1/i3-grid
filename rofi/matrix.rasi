@@ -22,45 +22,49 @@
 
 // This is the rasi frontend for rofi dmenu.
 // Dynamic Grid sizing [WIP]
-// For now, only a 2x2 matrix is supported (custom shapes
-// can be made with 'X' and inputting custom grids)
+// For now, only certain matrices are supported (custom shapes
+// can be made with the 'X' and inputting custom otf grids)
 
 configuration {
-  display-drun: "FloatWM";
+  display-drun: "i3-grid";
   show-icons: true;
-  icon-theme: "Papirus-Dark";
   location: 2;
-  fake-transparency: false;
-  hide-scrollbar: true;
-  bw: 0;
-  fullscreen: false;
-  show-icons: true;
-  terminal: "kitty";
   sidebar-mode: true;
+  /* Vim Shortcuts - Feel free to delete.
+  You can still search for the key using
+  a capital letter!  */
+  kb-remove-to-eol: "";
+  kb-cancel: "e,Escape";
+  kb-row-up: "Up,k,ISO_Left_Tab";
+  kb-row-left: "h";
+  kb-row-right: "l";
+  kb-row-down: "Down,j";
+  kb-accept-entry: "m,Return,KP_Enter";
+  kb-remove-char-back: "BackSpace,Shift+BackSpace,Control+u";
+  kb-move-char-back: "Left";
+  kb-clear-line: "Control+c";
+  kb-accept-alt: "Shift+Return,n";
+  kb-remove-to-sol: "";
 }
 * {
-  bg: #000000;
-  ac: #869fa214;
-  ac-txt: #869fa2;
-  item: #bdc3c3;
+  // Change background here
+  bg: ${BG};
+  item: ${TXT};
   txt: #d1d5da;
   anchor: east;
   location: east;
-  position: center;
 }
 * {
   background-color: rgba(0,0,0,0);
-  font: "Nerd Font 13";
+  font: "Iosevka 13";
 }
 window {
-  transparency: "real";
   fullscreen: false;
   // We can make this dynamic for different sized grids
+  // via dynamic env vars. Might be pushing the limits of Rofi..
   width: 220px;
-  height: 180px;
   x-offset: -0.5%;
-  border: 0;
-  padding: 0 0 0 50;
+  padding: 0 0 0 40;
 }
 mainbox {
   children: [ inputbar, listview ];
@@ -68,7 +72,7 @@ mainbox {
   border: 0px;
   border-radius: 12px;
   background-color: @bg;
-  padding: 10 0 0 0;
+  padding: 7 5 0 5;
 }
 listview {
   columns: ${COLS};
@@ -80,33 +84,25 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  padding: 0 0 6 -35;
+  padding: 0 0 6 -30;
   border-radius: 6;
 }
 element selected {
-  background-color: rgba(9, 145, 224, 0.4);
+  background-color: ${ACTIVE};
   border-color: #ffffff0A;
   transition: 20;
 }
+element-icon,
+element-text,
 element-icon {
   size: 30;
   horizontal-align: 0.5;
   vertical-align: 0.5;
-}
-element-icon {
-  size: 30;
-  horizontal-align: 0.5;
-  vertical-align: 0.5;
-}
-element-text {
-  horizontal-align: 0.5;
-  vertical-align: 2.5;
-  text-color: inherit;
 }
 inputbar {
   children: [prompt,entry];
-  padding: 4 4 4 4;
-  background-color: #242222;
+  padding: 3 3 3 3;
+  background-color: ${SBAR};
   border: 0 0 1 0;
   border-color: #ffffff0A;
   border-radius: 5;
@@ -114,11 +110,11 @@ inputbar {
 prompt {
   enabled: true;
   color: #5e7797;
-  padding: 0 0 0 5;
+  padding: 0 0 0 2;
 }
 entry {
   text-color: @txt;
   size: 4px;
-  padding: 4 12 8 5;
-  font: "Nerd Font 10";
+  padding: 3 10 3 2;
+  font: "Iosevka 11";
 }

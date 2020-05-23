@@ -24,9 +24,10 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 PR's very welcome. Order of importance will be according to issues and PR count.
 
 - Templating feature for quick floating env startup (Top Current Priority)
+- Restore all scratch pads with one action
 - Deep scratch pad integration (Drop-down list and temporary pads)
 - Remember Previous option and sequentially follow the grid trend (cache)
-- Dynamic Rofi menu (width, height) to personal rc config settings
+- Dynamic Rofi menu (width, height) to personal rc config settings (with Vim keys)
 - Additional Options:
   - Send all floating windows to a temporary scratch pad (accessible via rofi)
   - Fill the remaining of the floating screen with new window (Recursive stack)
@@ -37,10 +38,15 @@ PR's very welcome. Order of importance will be according to issues and PR count.
 
 ## Recently Added
 
+- Hide all scratch pads with one action
 - Transform all windows in the current screen with a single command (`all` flag)!
 - Dynamic monitor sizing (xrandr parsing)
 
 ## Known Bugs
+
+- Search indexing is suboptimal for double digits (rofi limitations)
+
+## Crushed Bugs
 
 - ~~Multi-select offset resizing (Does not respect all offsets)~~
 - ~~Left & Right offsets are inaccurate (Applies to both sides)~~
