@@ -72,7 +72,7 @@ mainbox {
   border: 0px;
   border-radius: 12px;
   background-color: @bg;
-  padding: 7 5 0 5;
+  padding: 7 5 4 5;
 }
 listview {
   columns: ${COLS};
@@ -84,7 +84,7 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  padding: 0 0 6 -30;
+  padding: 0 0 3 -30;
   border-radius: 6;
 }
 element selected {

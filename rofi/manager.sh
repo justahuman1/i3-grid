@@ -35,7 +35,7 @@ export SBAR="#242222"                   # Search Bar background
 ## Initalize
 join() { local IFS="$1"; shift; echo "$*"; }
 # src file absolute path (if i3-grid is not installed)
-app_abs_path="/home/sai/Code/FullApps/quadrant"
+app_abs_path="/home/sai/Code/FullApps/quadrant/"
 rofi_command="rofi -i -theme $app_abs_path/rofi/matrix.rasi -multi-select"
 # We use a bash function to dynamically generate the
 # grid for different canvases on the fly.
@@ -81,7 +81,8 @@ done
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
 # Path to the src python file
-src_file="$app_abs_path/i3-grid/grid/i3_grid.py"
+# app_abs_path="/home/sai/Code/FullApps/quadrant/i3-grid/i3grid/i3_utils/grid.py"
+src_file="$app_abs_path/i3-grid/i3grid/i3_utils/grid.py"
 
 if [[ "$len" -gt "2" ]]; then  # if multi select
   declare -a arr
@@ -117,7 +118,7 @@ case "$chosen" in
   python $src_file float reset
 ;;
 "H")
-  python $src_file hide --all
+  python $src_file hide --noresize --all
 ;;
 "X")
   custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"

@@ -1,11 +1,14 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+try:
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+except:
+    long_description = "An i3wm extension for managing floating windows."
 
 setuptools.setup(
     name="i3-grid-test",
-    version="0.2.2",
+    version="0.2.4b1",
     author="Sai Valla",
     author_email="justahuman1@github.com",
     description="A floating window management extension for i3.",
@@ -18,8 +21,8 @@ setuptools.setup(
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU GPL 3 License",
-        "Operating System :: Linux",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.6',
 )

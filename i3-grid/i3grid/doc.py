@@ -86,9 +86,9 @@ class Documentation:
             ),
             "csize": "Resize the window into a custom size of screen (1-100)",
             "hide": "Hide the current window to scratchpad (if scratchpad)."
-            " Can be combined with 'all' flag to clear floating windows in workspace"
+            " Can be combined with 'all' flag to clear floating windows in workspace",
+            "reset": "Resets the focused window into the middle occupying"
             " 75ppt (i3 default) screen space",
-            "reset": "Resets the focused window into the middle occupying",
             "listen": (
                 "Socket Listener (sole action) for event binding in native"
                 " Python and command line (Listens on port flag or"

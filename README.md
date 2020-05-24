@@ -6,7 +6,25 @@ i3, our beloved window manager, is just that. A tiling window manager. It lets t
 
 Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-142231260)</sup> <sup>[2](https://www.reddit.com/r/i3wm/comments/97hc7u/how_to_move_window_relative_to_display/e4955ff/)</sup> <sup>[3](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) </sup>
 
-## Installation
+## Quickstart
+
+Install via Python:
+
+    pip install i3-grid
+
+    python -m i3grid -h
+
+Install via GitHub:
+
+    git clone https://github.com/justahuman1/i3-grid.git
+
+    cd i3-grid/ && python -m i3grid -h
+
+Install via AUR:
+
+    yay install i3-grid
+
+    i3grid -h
 
 ## Features
 

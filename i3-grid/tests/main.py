@@ -20,10 +20,19 @@
 import subprocess
 import sys
 import time
+import sys
+import os
+import logging
+# from i3grid import grid
+import i3grid as grid
+from i3grid import Documentation
 
-import floatwm
-from doc import Documentation
-
+# TODO: Consider Pytest
+# Logger for stdout
+logging.basicConfig(
+        level=logging.DEBUG,
+        format='[%(asctime)s %(levelname)s |%(lineno)d]: %(message)s')
+logger = logging.getLogger(__name__)
 
 class Unit:
     """Base Unit class for unit testing"""
@@ -32,7 +41,7 @@ class Unit:
         super().__init__()
 
     def execute_bash(self, command_str):
-        return floatwm.Utils.dipatch_bash_command(command_str)
+        return grid.Utils.dipatch_bash_command(command_str)
 
 
 # FloatManager Test
@@ -45,16 +54,16 @@ class ManagerTest(Unit):
     def center_test(self,):
         doc = Documentation()
         comx = list(doc.actions)
-        (floatwm.FloatManager(commands=comx).run_command("center"))
+        (grid.FloatManager(commands=comx).run("center"))
 
     def grid_test(self, target):
-        (floatwm.FloatManager(target=target).run_command("snap"))
+        (grid.FloatManager(target=target).run("snap"))
 
     def main_run_emulator(self):
         doc = Documentation()
         comx = list(doc.actions)
-        manager = floatwm.FloatManager(commands=comx)
-        manager.run_command(cmd="snap")
+        manager = grid.FloatManager(commands=comx)
+        manager.run(cmd="snap")
 
 
 # Utils Unit test
@@ -65,22 +74,22 @@ class UtilsTest(Unit):
         super().__init__()
 
     def cmd_line_test(self):
-        args = "2 2"  # test a 4x4 floating grid
-        Unit().execute_bash(f"python floatwm.py {args}")
+        d = "--cols 2 --rows 2"
+        logging.info(Unit().execute_bash(f"python -m i3grid center {d}"))
 
     def yaml_load_test(self):
-        floatwm.Utils.read_config()
+        grid.Utils.read_config()
 
 
 def help_test():
-    val = floatwm.Utils.dipatch_bash_command("python floatwm.py")
+    val = grid.Utils.dipatch_bash_command("python -m i3grid -h")
     help_err = "Incorrect main body (triggering a function without value)"
     assert val is not None, help_err
 
 
 def metadata_test():
-    util = floatwm.FloatUtils()
-    # total_size, active_monitor = util.calc_metadata()
+    util = grid.FloatUtils()
+    total_size, active_monitor = util.calc_metadata()
     print(util.area_matrix)
     print(util.current_display)
 
@@ -101,7 +110,7 @@ class SocketTest:
         super().__init__()
 
     def start_server(self):
-        self.server = floatwm.Middleware()
+        self.server = grid.Middleware()
         self.server.start_server(data_mapper=SocketTest.test_function)
 
     @staticmethod
@@ -148,7 +157,9 @@ tests = {
 
 
 def runner():
-    results = {}.fromkeys(['passed', 'skipped', 'failed'], [])
+    results = {}.fromkeys(['passed', 'skipped', 'failed'], None)
+    for i in results:
+        results[i] = []
     print('-'*10, "Running  i3-grid tests", '-'*10)
     print("Respond to the questions with T (true) or F (false)", end="\n")
     if input("Run tests? [y/N] > ").lower() != 'y':
@@ -158,9 +169,17 @@ def runner():
         print(f"Test Name: {name}")
         print(f"Test Description: {test['desc']}")
         if input('Run current test? [y/N] > ').lower() == 'y':
-            test['def']()
+            try:
+                test['def']()
+            except Exception as e:
+                logger.info('\tError:', e)
+                print('-'*20)
+                print('\tTest Failed.. Error Caught. Added')
+                results['failed'] += [name]
+                print('-'*20)
+                continue
             print(test['post_msg'])
-            res = input("[t/F] > ")
+            res = input('Test passed [t/F]: ')
             if res.lower() == 't':
                 results['passed'] += [name]
             else:
