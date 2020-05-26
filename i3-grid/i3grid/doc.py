@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#  License: GPL-3.0
-#  Copyright (C) 2020 Sai Valla
+# License: GPL-3.0
+# Copyright (C) 2020 Sai Valla
+# URL: https://github.com/justahuman1
 
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from argparse import (
     SUPPRESS,
@@ -77,12 +78,12 @@ class Documentation:
             "center": "Center the focused window to a float window",
             "float": (
                 "Toggle the float of a window (overrides config file for"
-                "otf movements)"
+                " otf movements)"
             ),
             "resize": "Resize focused window (if float)",
             "snap": (
-                "Runs grid placement (can be combined with all"
-                "other actions). Arguments include rows, cols, and target"
+                "Runs grid placement of window (can be combined with all"
+                " other actions). Flag args include rows, cols, and target"
             ),
             "csize": "Resize the window into a custom size of screen (1-100)",
             "hide": "Hide the current window to scratchpad (if scratchpad)."
@@ -94,9 +95,7 @@ class Documentation:
                 " Python and command line (Listens on port flag or"
                 " default: 65433)"
             ),
-            "multi": (
-                "Stretch a window across a range of numbers (Use flag 'multis')"
-            ),
+            "multi": ("Stretch a window across a range of numbers (Use flag 'multis')"),
         }
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
@@ -110,7 +109,9 @@ class Documentation:
                 "action": "append",
                 "nargs": "+",
                 "help": "On the fly offset per window"
-                " {Array[top, right, bottom, left]}",
+                " {Array[top, right, bottom, left]} | Ex: --offset 10 0 "
+                "(Can take upto 4 integers. Less than 4 fills the remaining"
+                "values with 0. This example is the same as: --offset 10 0 0 0)",
             },
             "perc": {
                 "type": "int",
@@ -125,7 +126,8 @@ class Documentation:
                 "action": "append",
                 "nargs": "+",
                 "help": f"The range of numbers to strech the window across."
-                " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13' or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
+                " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13'"
+                "or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
             },
             "port": {
                 "type": "int",
@@ -134,7 +136,7 @@ class Documentation:
             },
         }
         self.state_flags = {
-            "all": "Applies the actions to all windows in current workspace",
+            "all": "Applies the action(s) to all windows in current workspace",
             "noresize": _ova("resize"),
             "nofloat": _ova("float"),
         }
@@ -172,12 +174,12 @@ class Documentation:
     def action_header(self) -> str:
         return """Actions are the functions to execute on the current window.
                   Order of operations matters here. For Example:
-                  "python i3-grid.py center float --target 3"
+                  "python i3-grid.py snap float --target 3"
                   We can assume that this command is for a tiled window
                   (as the user passed an option to make the window float).
-                  This will try to center the window to grid position 3 but
+                  This will try to snap the window to grid position 3 but
                   fails, as it is not floating. The proper order would be:
-                  "python i3-grid.py float center --target 3"
+                  "python i3-grid.py float snap --target 3".
                   A minimum of one action is required to run the script."""
 
     def action_choices(self) -> str:

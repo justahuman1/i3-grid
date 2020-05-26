@@ -11,6 +11,7 @@ def p(desc):
 # Instantiate the main manager which
 # controls the command dispatchment process.
 manager = i3grid.FloatManager(check=True)
+# The check flag initalizes autofloating and autoresizing
 p("Instantiated Float Manager")
 
 # Run a command on the following window
@@ -23,7 +24,7 @@ p("Centered the current Window.")
 # manager instance
 new_config = i3grid.BASE_CONFIG
 
-# Check the possible configurations you can make
+# Check the possible configurations that can be made
 # print(new_config.keys())
 
 new_config['DefaultGrid'] = {'Rows': 3, 'Columns': 1}

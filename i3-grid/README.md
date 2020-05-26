@@ -54,7 +54,7 @@ The method descriptions are as follows:
 
 - run\*
 
-      def run(self, cmd: str, **kwargs) -> None:
+      def run(self, cmd: str, **kwargs) -> dict:
 
       An abstraction over the raw action commands. Dispatches command, updates i3 state,
       and cleans globals/grid leaks. The available commands are as seen in the CLI help menu.
@@ -68,9 +68,9 @@ The method descriptions are as follows:
       def all_override(self, commands: list, **kwargs) -> List[tuple]:
 
       Used to apply functions to multiple windows. The methodology is to focus on the window
-      and apply the user defined action(s). Returns the windows in the current workspace.
-      The container id is available and can be activated by passing in a kwargs `id` boolean
-      to True.
+      and apply the user defined action(s). Also applies any flags prior to running action (ex.
+      auto resizing, etc.) Returns the windows in the current workspace. The container id is
+      available and can be activated by passing in a kwargs `id` boolean to True.
 
 - update_config\*
 
@@ -83,45 +83,45 @@ The method descriptions are as follows:
 
 - custom_resize
 
-      def custom_resize(self, **kwargs) -> None:
+      def custom_resize(self, **kwargs) -> dict:
 
       Resize the current window to custom screen percentage. The percentage is
       determined by the `DefaultResetPercentage` key in the BASE_CONFIG.
 
 - focus_window
 
-      def focus_window(self, **kwargs) -> None:
+      def focus_window(self, **kwargs) -> dict:
       Focuses on the window with given kwargs `id`
 
 - hide_scratchpad
 
-      def hide_scratchpad(self, **kwargs) -> None:
+      def hide_scratchpad(self, **kwargs) -> dict:
 
       Hides the scratchpad with given kwargs `id` or current window. If window
       is not assigned to a scratchpad, it will not hide it.
 
 - make_float
 
-      def make_float(self, **kwargs) -> None:
+      def make_float(self, **kwargs) -> dict:
 
       Makes the current window float. If already float, do nothing.
 
 - make_resize
 
-      def make_resize(self, **kwargs) -> None:
+      def make_resize(self, **kwargs) -> dict:
 
       Resizes the following window into the fixed grid size (There is a seperate function
       for custom resizing) as determined by user input of Rows and Columns.
 
 - move_to_center
 
-      def move_to_center(self, **kwargs) -> None:
+      def move_to_center(self, **kwargs) -> dict:
 
       Moves the focused window to the center of the current monitor.
 
 - multi_select
 
-      def multi_select(self, \*\*kwargs) -> None:
+      def multi_select(self, \*\*kwargs) -> dict:
 
       Allows for free range select across a grid quadrants. Utilizes the
       `multis` key from BASE_CONFIG to determine the upper and lower bound.
@@ -136,13 +136,13 @@ The method descriptions are as follows:
 
 - reset_win
 
-      def reset_win(self, **kwargs) -> None:
+      def reset_win(self, **kwargs) -> dict:
 
       Resets the window to default i3 size.
 
 - snap_to_grid
 
-      def snap_to_grid(self, **kwargs) -> None:
+      def snap_to_grid(self, **kwargs) -> dict:
 
       Snaps the focused window to the grid location of choice. The location may
       be changed via the `SnapLocation` key in BASE_CONFIG. Accepts a `tc`
@@ -187,4 +187,4 @@ A majority of these functions are for the library itself and may be ignored.
 ## Todos
 
 - The CLI is seemingly far more useful as this should be a somewhat minimal library. The GitHub README contains the future features that have been inquired.
-- An important TODO for the library is to allow for deep kwargs on dispatches to more specific control.
+- An important TODO for the library is to allow for deep kwargs on dispatches for more granular control.

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-#  GitHub: justahuman1
-#  URL: https://github.com/justahuman1
 #  License: GPL-3.0
 #  Copyright (C) 2020 Sai Valla
+#  URL: https://github.com/justahuman1/i3-grid
+
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,13 +17,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# ---- Rofi Frontend ----
-# FIXME: Currently, the grid resizing is static. If you change it to a different
+## ---- Rofi Frontend ----
+# Currently, the grid resizing is static. If you change it to a different
 # number, you *may need to change the height and width correspondingly in the rasi file.
 # Control rofi theming here (Deep configuration available in the rasi file)
 # Too many env vars will slow down the load time, hence limitation.
 
-## Theming
+## FIXME: Theming
 export COLS=4   # Corresponds to grid layout of the screen (X,Y)
 export LINES=4
 export BG="#000000"                     # Panel Background
@@ -32,7 +32,7 @@ export GRID_FONT="Iosevka 13"           # Font (Include size)
 export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
 export SBAR="#242222"                   # Search Bar background
 
-## Initalize
+# Initalize
 join() { local IFS="$1"; shift; echo "$*"; }
 # src file absolute path (if i3-grid is not installed)
 app_abs_path="/home/sai/Code/FullApps/quadrant/"
@@ -66,24 +66,19 @@ grid+=(
   "A" # Apply snap to all windows in current workspace
   "H" # Hide all workspace floating windows
 
-  ## FIXME: Add command here. Define it's call in the case statement below.
+  ## FIXME: Add command here. Define it's call in the case statement below (line 131).
 )
-# Without the swap, we can make it dynamic and allow on the fly
-# grids. We need to change our python library to adjust for this.
-# Or if there is a flexbox column-row numbering is possible with rasi (css),
-# that would be the best option.
 options=""
 for i in ${grid[*]}; do
   options="${options}${i}\n"
 done
-
 # grid options passed to rofi
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
 # Path to the src python file
 # app_abs_path="/home/sai/Code/FullApps/quadrant/i3-grid/i3grid/i3_utils/grid.py"
-src_file="$app_abs_path/i3-grid/i3grid/i3_utils/grid.py"
-
+# src_file="$app_abs_path/i3-grid/i3grid/i3_utils/grid.py"
+src_file="-m i3grid"
 if [[ "$len" -gt "2" ]]; then  # if multi select
   declare -a arr
   arr=( $(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}') )
@@ -91,7 +86,7 @@ if [[ "$len" -gt "2" ]]; then  # if multi select
   python $src_file multi --multis $multi_arg
   exit
 elif [[ ! " ${grid[@]} " =~ " ${chosen} " ]]; then
-    # Catch for non-grid user input
+    # Catch non-grid user input
     # Ex: I run raw custom commands that I type into the grid (as outputted by rofi)
     echo "Error: Element Out of grid"
     python $src_file -h
@@ -100,7 +95,7 @@ fi
 
 case "$chosen" in
 "A")
-  python $src_file snap --all
+  python $src_file float resize snap --all
 ;;
 "C")
   p="$($rofi_command -dmenu -p "% -" -selected-row 0)"
@@ -133,7 +128,7 @@ case "$chosen" in
     --target ${r_c_t[2]}
 ;;
 
-# Define custom calls here. Template (Ex: Using custom command 'O'):
+## FIXME Define custom calls here. Template (Ex: Using custom command 'O'):
 # "O")
 #   i3-grid <action> <optional-flags>
 # ;;

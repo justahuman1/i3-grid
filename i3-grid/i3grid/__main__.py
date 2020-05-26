@@ -5,8 +5,8 @@ from i3grid import Documentation, FloatManager, Utils
 
 # Logger for stdout
 logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s %(levelname)s |%(lineno)d]: %(message)s')
+    level=logging.INFO, format="[%(asctime)s %(levelname)s |%(lineno)d]: %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -23,8 +23,6 @@ def _sole_commands(args):
         assert (
             len(args.actions)
         ) == 1, "'Listen' is a sole command. Do not pass additional actions"
-        # Utils.read_config()
-        # Utils.on_the_fly_override(port=args.port)
         listener = FloatManager(check=False)
         try:
             listener.start_server(data_mapper=print)

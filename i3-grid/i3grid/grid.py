@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#  License: GPL-3.0
-#  Copyright (C) 2020 Sai Valla
+# License: GPL-3.0
+# Copyright (C) 2020 Sai Valla
+# URL: https://github.com/justahuman1
 
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
 import collections
@@ -36,24 +37,26 @@ try:
     from .xrandr import XRandR
     from .doc import Documentation
 except ImportError:
-    # Cli
+    # cli
     from xrandr import XRandR
     from doc import Documentation
 
 # Logger for stdout
 logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s %(levelname)s |i3-grid %(lineno)d]: %(message)s')
+    level=logging.INFO,
+    format="[%(asctime)s %(levelname)s |i3-grid %(lineno)d]: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 try:
     import i3
+
     collectionsAbc = collections.abc
 except ModuleNotFoundError:
     logger.critical("Missing i3-py module")
     exit(1)
 
-# i3-grid is a script to manage floating windows for the
+# i3-grid is a module to manage floating windows for the
 # i3 tiling window manager. The code is split into several classes, each
 # isolating the logic respective to its name. The process flow is as follows:
 
@@ -89,16 +92,35 @@ Tensor = List[Location]
 # Represents the display monitor to their respective index
 DisplayMap = Dict[int, Location]
 # Single global dict -  shared interface for library & cli
-BASE_CONFIG = {k: v for k, v in zip(
-    [  # snake case keys are non-config keys (unique to implementation only)
-     'AutoConvertToFloat', 'AutoResize', 'SnapLocation', 'DefaultGrid',
-     'GridOffset', 'DisplayMonitors', 'SocketPort', 'multis',
-     'rc_file_name', 'DefaultResetPercentage'],
-    [  # default values for config without rc file
-     True, True, 0, {"Rows": 2, "Columns": 2},
-     [0, 0, 0, 0], {"eDP1", "HDMI1", "VGA"}, 65433, 0,
-     'i3gridrc', 75]
-)}
+BASE_CONFIG = {
+    k: v
+    for k, v in zip(
+        [  # snake case keys are non-config keys for advanced tweaking
+            "AutoConvertToFloat",
+            "AutoResize",
+            "SnapLocation",
+            "DefaultGrid",
+            "GridOffset",
+            "DisplayMonitors",
+            "SocketPort",
+            "multis",  # the multichannel flag
+            "rc_file_name",  # change the name of the dotfile
+            "DefaultResetPercentage",
+        ],
+        [  # default values for config without rc file
+            True,
+            True,
+            0,
+            {"Rows": 2, "Columns": 2},
+            [0, 0, 0, 0],
+            {"eDP1", "HDMI1", "VGA", "DP2"},
+            65433,
+            0,
+            "i3gridrc",
+            75,
+        ],
+    )
+}
 
 
 class Middleware:
@@ -116,7 +138,7 @@ class Middleware:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
             logger.info(f"Binding to: {Middleware.host}/{BASE_CONFIG['SocketPort']}")
-            s.bind((Middleware.host, BASE_CONFIG['SocketPort']))
+            s.bind((Middleware.host, BASE_CONFIG["SocketPort"]))
             s.listen()
             while True:
                 # We only have one listener at a time. If we need
@@ -135,7 +157,6 @@ class Middleware:
                     logger.info("Server Socket Closed")
                     break
 
-
     def dispatch_middleware(self, data: str, **kwargs) -> None:
         """Client Middleware to send data to server"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -143,7 +164,7 @@ class Middleware:
             # user middleware via python/bash if necessary
             s.setblocking(1)
             try:
-                s.connect((Middleware.host, BASE_CONFIG['SocketPort']))
+                s.connect((Middleware.host, BASE_CONFIG["SocketPort"]))
             except (ConnectionRefusedError, BlockingIOError):
                 return
             s.sendall(Middleware.str2bin(data))
@@ -152,7 +173,7 @@ class Middleware:
             # data = s.recv(1024)
 
     @staticmethod
-    def str2bin(data: str, res_str: bool = False) -> 'bytes':
+    def str2bin(data: str, res_str: bool = False) -> "bytes":
         if not isinstance(data, str):
             data = json.dumps(data)
         return (
@@ -190,10 +211,12 @@ class Utils:
             "float": lambda *d: i3.floating("enable"),
             "reset": lambda *d: (
                 i3.resize("set", "75ppt", "75ppt")
-                and i3.move("window", " position", "center")),
+                and i3.move("window", " position", "center")
+            ),
             "custom": (
                 lambda *d: i3.resize("set", d[0], d[0])
-                and i3.move("window", "position", "center")),
+                and i3.move("window", "position", "center")
+            ),
         }
         if isinstance(data, str):
             dispatcher[command](data)
@@ -203,10 +226,9 @@ class Utils:
             dispatcher[command](w, h)
 
     @staticmethod
-    def i3_custom(cmd: str, id: str =None) -> str:
+    def i3_custom(cmd: str, id: str = None) -> str:
         _b = "i3-msg"  # Multiline string is necessary here (i3 encoding)
-        return f"""{_b} [con_id="{id}"] {cmd}""" if cmd else (
-                """{_b} {cmd}""")
+        return f"""{_b} [con_id="{id}"] {cmd}""" if cmd else ("""{_b} {cmd}""")
 
     @staticmethod
     def get_cmd_args(elem: int = None) -> (Location, int):
@@ -224,13 +246,14 @@ class Utils:
     @staticmethod
     def read_config() -> None:
         global BASE_CONFIG
-        rc = BASE_CONFIG['rc_file_name']
+        rc = BASE_CONFIG["rc_file_name"]
         home = os.path.expanduser("~")
         default_locs = [
             f"{home}/.config/i3grid/{rc}",
             f"{home}/.config/{rc}",
             f"{home}/.{rc}",
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), f".{rc}")]
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), f".{rc}"),
+        ]
         target_loc = None
         for loc in default_locs:
             if os.path.isfile(loc):
@@ -241,7 +264,8 @@ class Utils:
             logger.warning(
                 "No dotfile config found."
                 " Add to ~/.i3gridrc or ~/.config/i3gridrc"
-                " or ~/.config/i3grid/i3gridrc")
+                " or ~/.config/i3grid/i3gridrc"
+            )
             return
 
         with open(target_loc, "r") as f:
@@ -249,7 +273,8 @@ class Utils:
         if not config or "Settings" not in config:
             raise ValueError(
                 "Incorrect i3gridrc file sytax. Please"
-                " follow yaml guidelines and example.")
+                " follow yaml guidelines and example."
+            )
 
         settings = config["Settings"]
         for key in settings:
@@ -268,30 +293,31 @@ class Utils:
             "offset": "GridOffset",
             "multis": "multis",
             "noresize": "AutoResize",
-            "nofloat": "AutoConvertToFloat"}
+            "nofloat": "AutoConvertToFloat",
+        }
 
         def offset_test(o, k) -> None:
             global BASE_CONFIG
-            assert (
-                len(o) <= 4
-            ), "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
+            assert len(o) <= 4, "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
 
             while len(o) != 4:
                 o += [0]
             BASE_CONFIG[k] = [int(i) for i in o]
             BASE_CONFIG[k][1], BASE_CONFIG[k][3] = (
-                BASE_CONFIG[k][3], BASE_CONFIG[k][1])
+                BASE_CONFIG[k][3],
+                BASE_CONFIG[k][1],
+            )
 
-        _g_tst = {'rows', 'cols'}
-        _auto_booleans = {'noresize', 'nofloat'}
+        _g_tst = {"rows", "cols"}
+        _auto_booleans = {"noresize", "nofloat"}
         for arg in kwargs:
             if kwargs[arg] is None or arg not in cmdline_serializer:
                 continue
             elif arg in _g_tst:
-                BASE_CONFIG['DefaultGrid'][cmdline_serializer[arg]] = kwargs[arg]
-            elif arg == 'target':
-                BASE_CONFIG['SnapLocation'] = kwargs[arg]
-            elif arg == 'offset':
+                BASE_CONFIG["DefaultGrid"][cmdline_serializer[arg]] = kwargs[arg]
+            elif arg == "target":
+                BASE_CONFIG["SnapLocation"] = kwargs[arg]
+            elif arg == "offset":
                 offset_test(kwargs[arg], cmdline_serializer[arg])
             elif arg in _auto_booleans:
                 if kwargs[arg]:
@@ -314,9 +340,9 @@ class FloatUtils:
         global BASE_CONFIG
         assert isinstance(val, dict), "Config value must be a dict."
         _similarity = set(BASE_CONFIG) - set(val)
-        assert len(
-            _similarity
-        ) == 0, f"Config value requires the additional keys: {_similarity}"
+        assert (
+            len(_similarity) == 0
+        ), f"Config value requires the additional keys: {_similarity}"
         BASE_CONFIG = val
         return True
         # FloatUtils.__init__(self)
@@ -324,18 +350,20 @@ class FloatUtils:
     def assign_focus_node(self) -> None:
         tree = i3.get_tree()
         wkspc = [
-            node for node in tree["nodes"]
-            if node["name"] == self.current_display["output"]]
+            node
+            for node in tree["nodes"]
+            if node["name"] == self.current_display["output"]
+        ]
         assert len(wkspc) > 0, "window could not be found"
 
         for w in wkspc:
             self.find_focused_window(w)
 
-        if 'args' in globals() and args.all is None:
+        if "args" in globals() and args.all is None:
             return
 
-        wkspc = [k['nodes'] for k in wkspc[0]['nodes'] if k['name'] == 'content'][0]
-        fcsd = [i for i in self.all_outputs if i['focused']][0]['name']
+        wkspc = [k["nodes"] for k in wkspc[0]["nodes"] if k["name"] == "content"][0]
+        fcsd = [i for i in self.all_outputs if i["focused"]][0]["name"]
 
         def grep_nest(obj, key, key2, key3) -> list:
             arr = []  # TODO: change keys to kwargs
@@ -351,11 +379,12 @@ class FloatUtils:
                     for item in obj:
                         fetch(item, arr, key)
                 return arr
+
             results = fetch(obj, arr, key)
             return results
 
-        data = [k for k in wkspc if k['name'] == fcsd][0]
-        names = grep_nest(data, 'id', key2='name', key3="floating")
+        data = [k for k in wkspc if k["name"] == fcsd][0]
+        names = grep_nest(data, "id", key2="name", key3="floating")
         self.current_windows = [i for i in names if i[0] and i[0] != fcsd]
         self.current_floating_windows = [i for i in self.current_windows]
 
@@ -379,7 +408,7 @@ class FloatUtils:
         total_size = {}
         monitor_cnt = 0
         for display in self.displays:
-            if display["name"] not in BASE_CONFIG['DisplayMonitors']:
+            if display["name"] not in BASE_CONFIG["DisplayMonitors"]:
                 continue
             display_screen_location = Location(
                 width=display["rect"]["width"], height=display["rect"]["height"]
@@ -389,13 +418,13 @@ class FloatUtils:
 
         self.all_outputs = i3.get_workspaces()
         active = [i for i in self.all_outputs if i["focused"]][0]
-        self.active_output = active['output']
+        self.active_output = active["output"]
         return total_size, active
 
     def get_wk_number(self) -> int:
         c_monitor = 0
         for display in self.displays:
-            if display["name"] in BASE_CONFIG['DisplayMonitors']:
+            if display["name"] in BASE_CONFIG["DisplayMonitors"]:
                 if self.match(display):
                     break
                 c_monitor += 1
@@ -415,19 +444,19 @@ class FloatUtils:
         res = Utils.dipatch_bash_command("xrandr --query")
         _err = "xrandr query returned unexpected results"
         assert len(res) >= 50, _err
-        if b'current' not in res[:50]:
+        if b"current" not in res[:50]:
             raise KeyError(_err)
 
-        data = [i for i in res[:50].split(b',') if b'current' in i]
+        data = [i for i in res[:50].split(b",") if b"current" in i]
         assert len(data) == 1, _err
 
-        data = str(data[0].decode('ascii')).split(' ')
+        data = str(data[0].decode("ascii")).split(" ")
         data = [int(i) for i in data if i.isnumeric()]
         assert len(data) == 2, _err
 
         return Location(data[0], data[1])
 
-    def xrandr_parser(self) -> 'Configuration':
+    def xrandr_parser(self) -> "Configuration":
         x = XRandR()
         x.load_from_x()
         return x.configuration
@@ -444,18 +473,19 @@ class MonitorCalculator(FloatUtils):
         # if mode == "resize" and self.cache_resz:
         #     return self.cache_resz
 
-        rows = BASE_CONFIG['DefaultGrid']['Rows']
-        cols = BASE_CONFIG['DefaultGrid']["Columns"]
-        assert BASE_CONFIG['SnapLocation'] <= (
-               rows * cols), "Incorrect Target in grid"
+        rows = BASE_CONFIG["DefaultGrid"]["Rows"]
+        cols = BASE_CONFIG["DefaultGrid"]["Columns"]
+        assert BASE_CONFIG["SnapLocation"] <= (rows * cols), "Incorrect Target in grid"
         # Check if target around border
         # if so, apply offset/(num rows or cols) (if resize)
         # if snap and border, apply full offset > + | -
         mode_defs = {
-            "snap": lambda *d: BASE_CONFIG['GridOffset'][d[0]],
+            "snap": lambda *d: BASE_CONFIG["GridOffset"][d[0]],
             "resize": lambda *xy: int(
-                (BASE_CONFIG['GridOffset'][xy[0]] +
-                 BASE_CONFIG['GridOffset'][xy[1]]) / (xy[2] or 1))}
+                (BASE_CONFIG["GridOffset"][xy[0]] + BASE_CONFIG["GridOffset"][xy[1]])
+                / (xy[2] or 1)
+            ),
+        }
         # [x, y] axis of grid index
         chosen_axis = self.find_grid_axis()
         cur_axis = self.find_grid_axis(loc=loc)
@@ -468,8 +498,9 @@ class MonitorCalculator(FloatUtils):
             return self.cache_resz
         elif mode == "snap":
             # per_offset = [int(i) for i in BASE_CONFIG['GridOffset']]
-            return Location(width=BASE_CONFIG['GridOffset'][1],
-                            height=BASE_CONFIG['GridOffset'][0])
+            return Location(
+                width=BASE_CONFIG["GridOffset"][1], height=BASE_CONFIG["GridOffset"][0]
+            )
 
         return Location(t_w, t_h)
 
@@ -480,7 +511,7 @@ class MonitorCalculator(FloatUtils):
         # 3) if tensors are intersecting: Monitor center - offset = true center
         display = self.area_matrix[self.workspace_num]
         window = self.get_target(self.focused_node)
-        if center or BASE_CONFIG['SnapLocation'] == 0:
+        if center or BASE_CONFIG["SnapLocation"] == 0:
             # Abs center (2, 2)
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
@@ -506,8 +537,8 @@ class MonitorCalculator(FloatUtils):
         for n, monitor in data.outputs.items():
             monitor = monitor.__dict__
             if n == self.active_output:
-                th = orig_point.height + monitor['position'][1]
-                tw = orig_point.width + monitor['position'][0]
+                th = orig_point.height + monitor["position"][1]
+                tw = orig_point.width + monitor["position"][0]
                 return Location(tw, th)
         return orig_point
 
@@ -516,8 +547,8 @@ class MonitorCalculator(FloatUtils):
 
     def find_grid_axis(self, loc: int = None) -> tuple:
         # row, col
-        loc = loc or BASE_CONFIG['SnapLocation']
-        return divmod(loc - 1, BASE_CONFIG['DefaultGrid']["Columns"])
+        loc = loc or BASE_CONFIG["SnapLocation"]
+        return divmod(loc - 1, BASE_CONFIG["DefaultGrid"]["Columns"])
 
     def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
         main_loc = Location(int(display.width / cols), int(display.height / rows))
@@ -557,32 +588,39 @@ class MonitorCalculator(FloatUtils):
         return grid
 
     def multi_pnt_calc(self):
-        chosen_range = [int(i) for i in BASE_CONFIG['multis']]
+        chosen_range = [int(i) for i in BASE_CONFIG["multis"]]
         mid = (min(chosen_range), max(chosen_range))
-        total_size = (BASE_CONFIG['DefaultGrid']['Rows'] *
-                      BASE_CONFIG['DefaultGrid']['Columns'])
-        assert (mid[0] <= total_size and
-                mid[1] <= total_size), "Incorrect grid inputs"
+        total_size = (
+            BASE_CONFIG["DefaultGrid"]["Rows"] * BASE_CONFIG["DefaultGrid"]["Columns"]
+        )
+        assert mid[0] <= total_size and mid[1] <= total_size, "Incorrect grid inputs"
 
         loc = [self.find_grid_axis(loc=mid[0]), self.find_grid_axis(loc=mid[1])]
         self.per_quadrant_dim = Location(
-            (self.per_quadrant_dim.width +
-             self.per_quadrant_dim.width * (loc[1][1] - loc[0][1])),
-            (self.per_quadrant_dim.height +
-             self.per_quadrant_dim.height * (loc[1][0] - loc[0][0])))
+            (
+                self.per_quadrant_dim.width
+                + self.per_quadrant_dim.width * (loc[1][1] - loc[0][1])
+            ),
+            (
+                self.per_quadrant_dim.height
+                + self.per_quadrant_dim.height * (loc[1][0] - loc[0][0])
+            ),
+        )
         self.make_resize()
         return self.cache_grid[loc[0][0]][loc[0][1]]
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
-        return [Location(int(window.width / rows), int(window.height / cols))
-                for window in windows]
+        return [
+            Location(int(window.width / rows), int(window.height / cols))
+            for window in windows
+        ]
 
 
 class Movements(MonitorCalculator):
     def __init__(self,) -> None:
         super().__init__()
 
-    def move_to_center(self, **kwargs) -> None:
+    def move_to_center(self, **kwargs) -> dict:
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
@@ -591,73 +629,73 @@ class Movements(MonitorCalculator):
         # offsets (that can extend in any direction).
         true_center = self.get_offset()
         # Dispatch final command
-        Utils.dispatch_i3msg_com(command="move", data=true_center)
+        return Utils.dispatch_i3msg_com(command="move", data=true_center)
 
-    def make_resize(self, **kwargs) -> None:
+    def make_resize(self, **kwargs) -> dict:
         target_size = self.per_quadrant_dim
-        Utils.dispatch_i3msg_com("resize", data=target_size)
+        return Utils.dispatch_i3msg_com("resize", data=target_size)
 
-    def custom_resize(self, **kwargs) -> None:
+    def custom_resize(self, **kwargs) -> dict:
         """Resize window to custom screen percentage"""
-        cp = BASE_CONFIG['DefaultResetPercentage']
-        Utils.dispatch_i3msg_com("custom", data=f"{cp}ppt")
+        cp = BASE_CONFIG["DefaultResetPercentage"]
+        return Utils.dispatch_i3msg_com("custom", data=f"{cp}ppt")
 
-    def snap_to_grid(self, **kwargs) -> None:
+    def snap_to_grid(self, **kwargs) -> dict:
         """Moves the focused window to the target
         (default: 0) position in current grid (default: 2*2)"""
-        true_center = kwargs['tc'] if 'tc' in kwargs else self.get_offset(
-                      center=False,)
-        Utils.dispatch_i3msg_com("move", true_center)
+        true_center = kwargs["tc"] if "tc" in kwargs else self.get_offset(center=False,)
+        return Utils.dispatch_i3msg_com("move", true_center)
 
-    def reset_win(self, **kwargs) -> None:
+    def reset_win(self, **kwargs) -> dict:
         """Moves to center and applies default tile
         to float properties (center, 75ppt)"""
-        Utils.dispatch_i3msg_com(command="reset")
+        return Utils.dispatch_i3msg_com(command="reset")
 
-    def make_float(self, **kwargs) -> None:
+    def make_float(self, **kwargs) -> dict:
         """Moves the current window into float mode if it is not
         float. If float, do nothing. Does not resize but i3 does so
         by default sometimes (based on config and instance rules)."""
-        Utils.dispatch_i3msg_com(command="float")
+        return Utils.dispatch_i3msg_com(command="float")
 
-    def hide_scratchpad(self, **kwargs) -> None:
-        id = kwargs['id'] if 'id' in kwargs else None
+    def hide_scratchpad(self, **kwargs) -> dict:
+        id = kwargs["id"] if "id" in kwargs else None
         dim = Utils.i3_custom("scratchpad show", id)
-        Utils.dipatch_bash_command(dim)
+        return Utils.dipatch_bash_command(dim)
 
-    def focus_window(self, **kwargs) -> None:
-        if 'id' not in kwargs and not kwargs['id']:
+    def focus_window(self, **kwargs) -> dict:
+        if "id" not in kwargs and not kwargs["id"]:
             return
-        dim = Utils.i3_custom("focus", kwargs['id'])
-        Utils.dipatch_bash_command(dim)  # focus
+        dim = Utils.i3_custom("focus", kwargs["id"])
+        return Utils.dipatch_bash_command(dim)  # focus
 
-    def multi_select(self, **kwargs) -> None:
+    def multi_select(self, **kwargs) -> dict:
         """Supports selection ranges
         that are continous and non-perpendicular."""
-        if BASE_CONFIG['multis'] == 0:
+        if BASE_CONFIG["multis"] == 0:
             return self.move_to_center()
-        elif len(BASE_CONFIG['multis']) == 1:
+        elif len(BASE_CONFIG["multis"]) == 1:
             return self.move_to_center()
 
         top_left = self.multi_pnt_calc()
-        Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left[1]))
+        return Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left[1]))
 
     def all_override(self, commands: list, **kwargs) -> List[tuple]:
         global BASE_CONFIG
-        passive_actions = {'resize', 'float'}
-        _tmp_loc = BASE_CONFIG['SnapLocation']
+        passive_actions = {"resize", "float"}
+        _tmp_loc = BASE_CONFIG["SnapLocation"]
 
-        BASE_CONFIG['SnapLocation'] = 1
+        BASE_CONFIG["SnapLocation"] = 1
         for cmd in commands:
             for w in self.current_windows:
-                self.focus_window(id=w[1])
-                if 'id' in kwargs and kwargs['id']:
-                    self.com_map[cmd](id=w[1])  # Call user function
-                else:
-                    self.com_map[cmd]()  # Call user function
+                self.focus_window(id=w[1])  # focus win
+                self.run_flags()  # run user flags, if any
+                if "id" in kwargs and kwargs["id"]:
+                    self.com_map[cmd](id=w[1])
+                else:  # Call user function
+                    self.com_map[cmd]()
                 if cmd not in passive_actions:  # iterate target
-                    BASE_CONFIG['SnapLocation'] += 1
-        BASE_CONFIG['SnapLocation'] = _tmp_loc
+                    BASE_CONFIG["SnapLocation"] += 1
+        BASE_CONFIG["SnapLocation"] = _tmp_loc
 
         return self.current_windows
 
@@ -675,31 +713,38 @@ class FloatManager(Movements, Middleware):
         # 4) Transform to global flags
         if check:
             self.run_flags()
-        if 'commands' not in kwargs:
-            kwargs['commands'] = list(Documentation().actions)
+        if "commands" not in kwargs:
+            kwargs["commands"] = list(Documentation().actions)
 
-        self.com_map = {c: e for c, e in zip(kwargs["commands"],
-                        [self.move_to_center,
-                        self.make_float,
-                        self.make_resize,
-                        self.snap_to_grid,
-                        self.custom_resize,
-                        self.hide_scratchpad,
-                        self.reset_win,
-                        self.start_server,
-                        self.multi_select])}
+        self.com_map = {
+            c: e
+            for c, e in zip(
+                kwargs["commands"],
+                [
+                    self.move_to_center,
+                    self.make_float,
+                    self.make_resize,
+                    self.snap_to_grid,
+                    self.custom_resize,
+                    self.hide_scratchpad,
+                    self.reset_win,
+                    self.start_server,
+                    self.multi_select,
+                ],
+            )
+        }
 
-        if 'all' in kwargs and kwargs['all']:
-            self.all_override(kwargs['actions'], target=kwargs['all'])
+        if "all" in kwargs and kwargs["all"]:
+            self.all_override(kwargs["actions"], target=kwargs["all"])
             exit(0)
 
-    def run_flags(self):
-        if BASE_CONFIG['AutoConvertToFloat']:
+    def run_flags(self) -> None:
+        if BASE_CONFIG["AutoConvertToFloat"]:
             self.make_float()
-        if BASE_CONFIG['AutoResize']:
+        if BASE_CONFIG["AutoResize"]:
             self.make_resize()
 
-    def run(self, cmd: str, **kwargs) -> None:
+    def run(self, cmd: str, **kwargs) -> dict:
         """Commands that must be refreshed on
         every action to sync state (C socket data transfer)"""
         if cmd not in self.com_map:
@@ -707,67 +752,23 @@ class FloatManager(Movements, Middleware):
         self.post_commands()  # Resync to state
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
-            args=({"command": cmd, "modifying_node": self.focused_node,
-                   'grid': self.cache_grid, 'monitors': self.displays},),
+            args=(
+                {
+                    "command": cmd,
+                    "modifying_node": self.focused_node,
+                    "grid": self.cache_grid,
+                    "monitors": self.displays,
+                },
+            ),
         ).start()  # Anonymous thread, since dataflow is unidirectional.
-        self.com_map[cmd](**kwargs)
+        return self.com_map[cmd](**kwargs)
 
     def post_commands(self) -> None:
         self.workspace_num = self.get_wk_number()
         # Set the focused node
         self.assign_focus_node()
         self.float_grid = self.calculate_grid(
-            BASE_CONFIG['DefaultGrid']["Rows"],
-            BASE_CONFIG['DefaultGrid']["Columns"],
-            self.area_matrix[self.workspace_num])
-
-
-def _debugger() -> None:
-    """Evaluates user input expression."""
-    logger.info("Entering debug mode. Evaluating input:")
-    while 1:
-        cmd = input(">>> ")
-        logger.info(eval(cmd))
-
-
-def _sole_commands(args):
-    if "listen" in args.actions:
-        assert (
-            len(args.actions)
-        ) == 1, "'Listen' is a sole command. Do not pass additional actions"
-        Utils.read_config()
-        Utils.on_the_fly_override(port=args.port)
-        listener = Middleware()
-        try:
-            listener.start_server(data_mapper=print)
-        except KeyboardInterrupt:
-            print()  # New line
-            logger.info("Closing i3-grid socket...")
-        finally:
-            exit(0)
-
-
-if __name__ == "__main__":
-    if "debug" in sys.argv:
-        _debugger()
-        exit(0)
-
-    start = datetime.datetime.now()
-    try:
-        doc = Documentation()
-    except NameError:
-        logger.critical("Missing Documentation (doc.py). Exiting..")
-        exit(1)
-
-    comx = list(doc.actions)
-    parser = doc.build_parser(choices=comx)
-    args = parser.parse_args()
-    # Check for sole commands (Static for now, only 1 value)
-    _sole_commands(args)
-    manager = FloatManager(commands=comx, **args.__dict__,)
-    for action in args.actions:
-        manager.run(cmd=action)
-
-    end = datetime.datetime.now()
-    logger.info(f"Total Time: {end - start}")
-    exit(0)
+            BASE_CONFIG["DefaultGrid"]["Rows"],
+            BASE_CONFIG["DefaultGrid"]["Columns"],
+            self.area_matrix[self.workspace_num],
+        )
