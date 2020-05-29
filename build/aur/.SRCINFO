@@ -1,0 +1,14 @@
+pkgbase = python-i3-grid
+	pkgdesc = A grid overlay interface for i3.
+	pkgver = 0.2.4b1
+	pkgrel = 1
+	url = https://github.com/justahuman1/i3-grid
+	arch = any
+	license = GPL3
+	makedepends = python3
+	depends = python-i3-py
+	source = https://files.pythonhosted.org/packages/eb/fa/d7cfd984d9484ea86b547cd663110497175b7a829a08d22d80b8454997f0/i3-grid-0.2.4b1.tar.gz
+	md5sums = bbb6078e95e3a059421401f820b4cca9
+
+pkgname = python-i3-grid
+

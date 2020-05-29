@@ -1,10 +1,10 @@
-# Maintainer: justahuman1 <saivdev@protonmail.com>
+# Maintainer: Sai Valla <saivdev@protonmail.com>
 
 pkgname=python-i3-grid
-pkgver=0.2.3b1
+pkgver=0.2.4b1
 pkgrel=1
 epoch=
-pkgdesc='A grid overlay interface for i3.'
+pkgdesc='A i3wm grid controller for floating window automation.'
 arch=(any)
 url="https://github.com/justahuman1/i3-grid"
 license=('GPL3')
@@ -13,16 +13,16 @@ depends=('python-i3-py')
 makedepends=('python3' )
 checkdepends=()
 conflicts=(${provides%=*})  # No quotes, to avoid an empty entry.
-source=('https://files.pythonhosted.org/packages/eb/fa/d7cfd984d9484ea86b547cd663110497175b7a829a08d22d80b8454997f0/i3-grid-0.2.3b1.tar.gz')
+source=('https://files.pythonhosted.org/packages/eb/fa/d7cfd984d9484ea86b547cd663110497175b7a829a08d22d80b8454997f0/i3-grid-0.2.4b1.tar.gz')
 md5sums=('bbb6078e95e3a059421401f820b4cca9')
 
 build() {
-    cd $srcdir/i3-grid-0.2.3b1
+    cd $srcdir/i3-grid-0.2.4b1
     python setup.py build
 }
 
 package() {
-    cd $srcdir/i3-grid-0.2.3b1
+    cd $srcdir/i3-grid-0.2.4b1
     python setup.py install --root="$pkgdir" --optimize=1
 }
 

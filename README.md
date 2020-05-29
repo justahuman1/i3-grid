@@ -49,7 +49,7 @@ Install via AUR:
    ~/.config/i3gridrc
    ~/.config/i3grid/i3gridrc
 
-   # More specific locations are searched first and will override the previous
+   // More specific locations are searched first and will override the previous
 
 Downloading the Rofi UI
 

@@ -71,10 +71,7 @@ class Documentation:
     """The help menu for
     the FloatManager. Presented with
     the '-h' flag."""
-
-    def __init__(self,) -> None:
-        super().__init__()
-        self.actions = {
+    actions = {
             "center": "Center the focused window to a float window",
             "float": (
                 "Toggle the float of a window (overrides config file for"
@@ -97,6 +94,9 @@ class Documentation:
             ),
             "multi": ("Stretch a window across a range of numbers (Use flag 'multis')"),
         }
+
+    def __init__(self,) -> None:
+        super().__init__()
         _rc_def = "(default in rc file)"
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
@@ -167,7 +167,7 @@ class Documentation:
             parser.add_argument(f"--{n}", action="store_true", help=desc)
 
         group = parser.add_argument_group(title="Actions")
-        for action, desc in self.actions.items():
+        for action, desc in Documentation.actions.items():
             group.add_argument(action, help=desc, action="none")
         return parser
 
@@ -184,7 +184,7 @@ class Documentation:
 
     def action_choices(self) -> str:
         help_str = "Actions:\n"
-        for action, desc in self.actions.items():
+        for action, desc in Documentation.actions.items():
             help_str += f"{action}\t{desc}\n"
 
         return help_str

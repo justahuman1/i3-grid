@@ -39,7 +39,10 @@ You will notice that not all methods will allow an id field. This is because
 of the limits of the i3-py library. I will try to patch the library to allow these
 if requested but an override is to focus on a window and then act on it.
 
-Additional comments are available in the source code.
+Additional low-level comments are available in the source code. Doc strings
+are also available for all abstracted functions and most internal functions.
+Calling help(<func>) in a REPL will display this information.
+
 The method descriptions are as follows:
 
         Class

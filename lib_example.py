@@ -48,6 +48,13 @@ p("Reset the window to default i3 float size")
 manager.all_override(commands=['float', 'resize', 'snap'])
 p("Applied float, resize, and snap to all windows in workspace")
 
+# Extra examples
+# Listening to i3-grid events
+# The data mapper is a callback function
+# that receives some data. Ex:
+# def data_mapper(*args: List[bytes]) --> None:
+manager.run('listen', data_mapper=print)
+
 # You can also interact with scratchpads,
 # manage offsets, and use the event sockets
 # for customized callbacks.

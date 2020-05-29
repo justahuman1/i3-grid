@@ -141,7 +141,7 @@ tests = {
     "help": {
         "desc": "Testing the command line help menu",
         "def": help_test,
-        "post_msg": "A help menu was printed above",
+        "post_msg": "No errors were printed to stdout",
     },
     "config": {
         "desc": "Testing yaml user configuration reading",

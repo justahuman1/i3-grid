@@ -13,9 +13,14 @@ logger = logging.getLogger(__name__)
 def _debugger() -> None:
     """Evaluates user input expression."""
     logger.info("Entering debug mode. Evaluating input:")
+    m = FloatManager(check=False)
+    print(">>> m = FloatManager(check=False)  # m.run(<cmd>)")
     while 1:
+        start = datetime.datetime.now()
         cmd = input(">>> ")
         logger.info(eval(cmd))
+        end = datetime.datetime.now()
+        logger.info(f"Total Time: {end - start}")
 
 
 def _sole_commands(args):
@@ -27,7 +32,7 @@ def _sole_commands(args):
         try:
             listener.start_server(data_mapper=print)
         except KeyboardInterrupt:
-            print()  # New line
+            print()
             logger.info("Closing i3-grid socket...")
         finally:
             exit(0)
@@ -37,23 +42,18 @@ if __name__ == "__main__":
     if "debug" in sys.argv:
         _debugger()
         exit(0)
-
-    start = datetime.datetime.now()
     try:
         doc = Documentation()
     except NameError:
         logger.critical("Missing Documentation (doc.py). Exiting..")
         exit(1)
-
-    comx = list(doc.actions)
+    comx = list(Documentation.actions)
     parser = doc.build_parser(choices=comx)
     args = parser.parse_args()
     # Check for sole commands (Static for now, only 1 value)
     _sole_commands(args)
     manager = FloatManager(commands=comx, **args.__dict__,)
-    for action in args.actions:
-        manager.run(cmd=action)
-
-    end = datetime.datetime.now()
-    logger.info(f"Total Time: {end - start}")
+    if not manager.all:
+        for action in args.actions:
+            manager.run(cmd=action)
     exit(0)
