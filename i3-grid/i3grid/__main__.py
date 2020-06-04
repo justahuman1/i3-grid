@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # Check for sole commands (Static for now, only 1 value)
     _sole_commands(args)
     manager = FloatManager(commands=comx, **args.__dict__,)
-    if not manager.all:
+    if not manager._TERMSIG:
         for action in args.actions:
             manager.run(cmd=action)
     exit(0)

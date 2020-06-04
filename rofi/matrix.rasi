@@ -33,10 +33,10 @@ configuration {
   /* Vim Shortcuts - Feel free to delete.
   You can still search for the key using
   a capital letter!  */
-  kb-row-left: "h";
+  kb-row-left: "h,Left";
   kb-row-down: "j,Down";
   kb-row-up: "k,Up,ISO_Left_Tab";
-  kb-row-right: "l";
+  kb-row-right: "l, Right";
   kb-clear-line: "c";
   kb-accept-entry: "m,Return,KP_Enter";
   kb-remove-char-back: "b,BackSpace";

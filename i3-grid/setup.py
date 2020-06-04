@@ -8,7 +8,7 @@ except:
 
 setuptools.setup(
     name="i3-grid",
-    version="0.2.4b1",
+    version="0.2.3b2",
     author="Sai Valla",
     author_email="justahuman1@github.com",
     description="A i3wm grid controller for floating window automation.",

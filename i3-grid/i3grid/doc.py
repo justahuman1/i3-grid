@@ -101,6 +101,7 @@ class Documentation:
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
         _ova = lambda auto: f"Override auto {auto} on the fly to be false"
+        _appl = lambda w: f"Applies the action(s) to all {w} windows in current workspace"
         self.flags = {
             "cols": {"type": "int", "help": _slc_txt("col")},
             "rows": {"type": "int", "help": _slc_txt("row")},
@@ -136,9 +137,10 @@ class Documentation:
             },
         }
         self.state_flags = {
-            "all": "Applies the action(s) to all windows in current workspace",
-            "noresize": _ova("resize"),
-            "nofloat": _ova("float"),
+            "all": _appl('windows') ,
+            "floating": _appl('floating windows'),
+            "noresize": _ova('resize'),
+            "nofloat": _ova('float'),
         }
 
     def build_parser(self, choices: list) -> ArgumentParser:
