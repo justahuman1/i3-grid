@@ -10,7 +10,7 @@ setuptools.setup(
     name="i3-grid",
     version="0.2.3b2",
     author="Sai Valla",
-    author_email="justahuman1@github.com",
+    author_email="saivdev@protonmail.com",
     description="A i3wm grid controller for floating window automation.",
     long_description=long_description,
     long_description_content_type="text/markdown",

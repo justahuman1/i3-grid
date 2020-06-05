@@ -13,16 +13,16 @@ depends=('python-i3-py')
 makedepends=('python3' )
 checkdepends=()
 conflicts=(${provides%=*})  # No quotes, to avoid an empty entry.
-source=('https://files.pythonhosted.org/packages/eb/fa/d7cfd984d9484ea86b547cd663110497175b7a829a08d22d80b8454997f0/i3-grid-0.2.3b2.tar.gz')
-md5sums=('bbb6078e95e3a059421401f820b4cca9')
+source=('https://files.pythonhosted.org/packages/ac/2a/f38475c92a041093756f693fce47a7ed17ca46acda8f6f3785b66cdf0623/i3-grid-0.2.3b2.tar.gz')
+md5sums=('2d58b731d962ab2a885a7efabce7c65a')
 
 build() {
-    cd $srcdir/i3-grid-0.2.4b1
+    cd $srcdir/i3-grid-0.2.3b2
     python setup.py build
 }
 
 package() {
-    cd $srcdir/i3-grid-0.2.4b1
+    cd $srcdir/i3-grid-0.2.3b2
     python setup.py install --root="$pkgdir" --optimize=1
 }
 

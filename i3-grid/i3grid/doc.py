@@ -110,9 +110,9 @@ class Documentation:
                 "action": "append",
                 "nargs": "+",
                 "help": "On the fly offset per window"
-                " {Array[top, right, bottom, left]} | Ex: --offset 10 0 "
-                "(Can take upto 4 integers. Less than 4 fills the remaining"
-                "values with 0. This example is the same as: --offset 10 0 0 0)",
+                " {Array[top, right, bottom, left]} | Ex: --offset 10 0"
+                " (Can take upto 4 integers. Less than 4 fills the remaining"
+                " values with 0. This example is the same as: --offset 10 0 0 0)",
             },
             "perc": {
                 "type": "int",
