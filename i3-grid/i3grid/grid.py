@@ -78,7 +78,7 @@ except ModuleNotFoundError:
 # Formatted with Black: https://github.com/psf/black
 
 __author__ = "Sai Valla"
-__version__ = "0.2.4b1"
+__version__ = "0.2.3b2"
 __date__ = "2012-05-20"
 __license__ = "GNU GPL 3"
 

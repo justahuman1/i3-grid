@@ -36,13 +36,13 @@ Install via GitHub:
 
 Install via AUR:
 
-    yay python-i3-grid
+    yay i3-grid
 
 ### Configuration
 
 1.  Automated setup ([Script](https://raw.githubusercontent.com/justahuman1/i3-grid/master/build/install.sh)):
 
-        sh -c "\$(curl -fsSL https://raw.githubusercontent.com/justahuman1/i3-grid/master/build/install.sh)"
+        bash <( curl -s https://raw.githubusercontent.com/justahuman1/i3-grid/master/build/install.sh )
 
 **OR**
 

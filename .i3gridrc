@@ -22,8 +22,8 @@
 
 MetaData:
     ApplicationName: i3-grid
-    # We use yaml as the file type (easy to read, standard for most python configs)
-    # so we do not have to parse custom rc format.
+    # We use yaml as the file type (easy to read, standard for most
+    # python configs) so we do not have to parse custom rc format.
     ThisFileType: yaml
     SourceFile: i3-grid.py
 Settings:
@@ -31,20 +31,6 @@ Settings:
 # via command line args. Ex: python i3_grid.py --<flag> overrideValue
     # =========== FIXME ==============
     # Change only the settings below
-    # Name of your monitor as recorded by 'i3-msg -t get_outputs'
-    # Exclude root displays (ex: xroot-0)
-    DisplayMonitors:
-        # An array of monitor displays this script
-        # will observe when ran (ignores other screens).
-        # All monitors should be listed below unless
-        # you know what you are doing (*Ignore xroot).
-        # To get the monitor names, run the command:
-        #     i3-msg -t get_outputs
-        # {string}: Monitor Names
-        - "eDP1"
-        - "HDMI1"
-        - "VGA"
-        - "DP2"
     DefaultGrid:
         # These are the only two grid attributes
         # (Recommended range: 2-4 for laptops, 2-8 for monitors)
