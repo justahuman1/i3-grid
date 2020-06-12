@@ -10,6 +10,8 @@ Current planned updates include templates (automating startup and grid managemen
 
 ## Demo:
 
+<img src="https://i.imgur.com/0QVD4sd.gif">
+
 Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-142231260)</sup> <sup>[2](https://www.reddit.com/r/i3wm/comments/97hc7u/how_to_move_window_relative_to_display/e4955ff/)</sup> <sup>[3](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) </sup>
 
 ## Quick start
@@ -124,7 +126,7 @@ Default bindings using the arrow keys and enter keys are available. Vim keys are
     - e: escape
 
 > NOTE: The keybindings interfere with the search. To search for 'h', use shift to bypass and search with the letter 'H'.
-> All keybindings can be changed in the `matrix.rasi` file under the \*configuration block (`kb-\*`)
+> All keybindings can be changed in the `matrix.rasi` file under the \*configuration block (`kb-*`)
 
 ## Todos
 
@@ -146,7 +148,7 @@ PR's very welcome. Order of importance will be according to issues and PR count.
 
 ## Recently Added
 
-- Hide all scratch pads with one action
+- Hide all scratch pads with one action (and filter floating windows)
 - Transform all windows in the current screen with a single command (`all` flag)
 - Dynamic monitor sizing (xrandr parsing)
 
