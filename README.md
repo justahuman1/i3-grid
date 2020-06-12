@@ -9,8 +9,12 @@ The lack of standard tools has resulted in personalized scripts [scattered](http
 Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode).
 
 ## Demo:
-
-<img src="https://i.imgur.com/0QVD4sd.gif">
+<p align="center">
+  <img src="https://i.imgur.com/0QVD4sd.gif"/>
+</p>
+<p align="center">
+  <img src="https://i.imgur.com/faMkae8.png"/>
+</p>
 
 Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-142231260)</sup> <sup>[2](https://www.reddit.com/r/i3wm/comments/97hc7u/how_to_move_window_relative_to_display/e4955ff/)</sup> <sup>[3](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) </sup>
 
