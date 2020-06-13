@@ -23,7 +23,7 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 ### Requirements
 
 - i3
-- i3-py
+- xrandr
 - Python3
 
 ### Installation
