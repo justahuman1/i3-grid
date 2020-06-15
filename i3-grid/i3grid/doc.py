@@ -145,7 +145,7 @@ class Documentation:
 
     def build_parser(self, choices: list) -> ArgumentParser:
         parser = ArgumentParser(
-            description="Manage your floating windows with ease.",
+            description="i3-grid: Manage your floating windows with ease.",
             formatter_class=CustomFormatter,
         )
         parser.register("action", "none", NoAction)

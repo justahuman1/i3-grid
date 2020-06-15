@@ -1,92 +1,62 @@
-#  License: GPL-3.0
-#  Copyright (C) 2020 justahuman1
+{
+  // Filetype: jsonc
+  // **No inline comments allowed
 
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+  // Grid attributes that define the default rows and columns
+  // when running a command without additional cli arguments
+  // (Recommended range: 2-4 for laptops, 2-8 for monitors)
+  // {int}
+  "defaultGrid":{
+    "rows":4,
+    "columns":4
+  },
 
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+  // Offset from screen borders (useful for polybar, etc.)
+  // Order matters here.
+  // Offset from top, right, bottom, left (in order)
+  // This format is similar to CSS
+  // Units: pixels
+  // {int}: Range(0, 0.5*monitor size)
+  "gridOffset": [20, 0, 20, 0],
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  // Default location to snap window to (if not given on the fly)
+  // The grid is read from top to bottom and left to right.
+  // 0 is center of the whole screen (no resizing)
+  // Every other number is auto-resized, unless auto-resize is also
+  // off
+  // Example: When Rows = 3 and Columns = 3, the
+  // snap locations in the grid are as follows:
+  //     1  |  2  |  3
+  //     --------------
+  //     4  |  5  |  6
+  //     --------------
+  //     7  |  8  |  9
+  // {int}: Range(0, Rows*Columns)
+  "snapLocation": 0,
 
-# The rc file may be in the following paths:
-# ~/.config/i3grid/i3gridrc
-# ~/.config/i3gridrc
-# ~/.i3gridrc
-# ./.i3gridrc  --> Same path as source (i3_grid.py, this copy)
+  // The percentage of screen the
+  // reset function will default the terminal to.
+  // {int}: Range(1, 100)
+  "defaultResetPercentage": 75,
 
-MetaData:
-    ApplicationName: i3-grid
-    # We use yaml as the file type (easy to read, standard for most
-    # python configs) so we do not have to parse custom rc format.
-    ThisFileType: yaml
-    SourceFile: i3-grid.py
-Settings:
-# All of the following settings can be overridden on the fly
-# via command line args. Ex: python i3_grid.py --<flag> overrideValue
-    # =========== FIXME ==============
-    # Change only the settings below
-    DefaultGrid:
-        # These are the only two grid attributes
-        # (Recommended range: 2-4 for laptops, 2-8 for monitors)
-        # {int}
-        Rows: 4
-        Columns: 4
-    GridOffset:
-        # Offset from screen borders (useful for polybar, etc.)
-        # Order matters here.
-        # Offset from top, right, bottom, left (in order)
-        # This format is similar to CSS
-        # Units: pixels
-        # {int}: Range(0, 0.5*monitor size)
-        - 20  # Top
-        - 0   # Right
-        - 20  # Bottom
-        - 0   # Left
+  // If you run i3-grid on a non-floating window,
+  // it can either throw an error, or automatically
+  // convert to float without prompt.
+  // {boolean}: true/false
+  "autoConvertToFloat": true,
 
-    # Default location to snap window to (if not given on the fly)
-    # The grid is read from top to bottom and left to right.
-    # 0 is center of the whole screen (no resizing)
-    # Every other number is auto-resized, unless auto-resize is also
-    # off
-    # Example: When Rows = 3 and Columns = 3, the
-    # snap locations in the grid are as follows:
-    #     1  |  2  |  3
-    #     --------------
-    #     4  |  5  |  6
-    #     --------------
-    #     7  |  8  |  9
-    # {int}: Range(0, Rows*Columns)
-    SnapLocation: 0
+  // If auto resize is true, snapping a window to
+  // the target value in the grid will resize it
+  // to fit proportional to the grid quadrant.
+  // Can be overridden on the fly (call resize
+  // function manually)
+  // {boolean}: true/false
+  "autoResize": true,
 
-    # The percentage of screen the
-    # reset function will default the terminal to.
-    # {int}: Range(1, 100)
-    DefaultResetPercentage: 75
-
-    # If you run i3-grid on a non-floating window,
-    # it can either throw an error, or automatically
-    # convert to float without prompt.
-    # {boolean}: true/false
-    AutoConvertToFloat: true
-
-    # If auto resize is true, snapping a window to
-    # the target value in the grid will resize it
-    # to fit proportional to the grid quadrant.
-    # Can be overridden on the fly (call resize
-    # function manually)
-    # {boolean}: true/false
-    AutoResize: true
-
-    # Default port for listenening and sending
-    # i3-grid data. Can be used for additional scripting
-    # Ex: Call a script when the socket sends a specific message.
-    # Default if not specifed: 65433
-    # {int}: Range(49152, 65535)
-    SocketPort: 65433
-
+  // Default port for listenening and sending
+  // i3-grid data. Can be used for additional scripting
+  // Ex: Call a script when the socket sends a specific message.
+  // Default if not specifed: 65433
+  // {int}: Range(49152, 65535)
+  "socketPort": 65433
+}

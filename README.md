@@ -6,9 +6,10 @@ i3, our beloved window manager, has placed an emphasis on tiling and tabbed layo
 
 The lack of standard tools has resulted in personalized scripts [scattered](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) throughout GitHub which are inefficient and static to the user. This module aims to allow for fast and dynamic floating window management with minimal input. i3-grid is also monitor agnostic and has a clean rofi interface with highly configurable commands.
 
-Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode).
+Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode). Please keep in mind that this is still in beta. Issues are bound to happen.
 
 ## Demo:
+
 <p align="center">
   <img src="https://i.imgur.com/0QVD4sd.gif"/>
 </p>
@@ -23,7 +24,7 @@ Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-1
 ### Requirements
 
 - i3
-- i3-py
+- xrandr
 - Python3
 
 ### Installation
@@ -38,7 +39,7 @@ Install via GitHub:
 
     cd i3-grid/i3-grid/
 
-    *This requires changing the `src_file` variable in the manager.sh rofi script.
+    *This requires changing the `grid_src` variable in the manager.sh rofi script
 
 Install via AUR:
 
@@ -65,10 +66,12 @@ Install via AUR:
     1.  Downloading the Rofi UI (_Optional_)
 
             # Place these files in any location you plan to run the application from.
-            # The default location is ~/.config/i3grid/{manager.sh, matrix.rasi}
+            # The default location is ~/.config/i3grid/{manager.sh, matrix.rasi, i3gridrc}
 
             curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/manager.sh > manager.sh
             curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/matrix.rasi > matrix.rasi
+            curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/.i3gridrc > i3gridrc
+            chmod +x manager.sh
 
 2.  Shortcuts:
 

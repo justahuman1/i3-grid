@@ -1,7 +1,12 @@
 import sys
 import datetime
 import logging
-from i3grid import Documentation, FloatManager, Utils
+try:
+    from i3grid import Documentation, FloatManager, Utils
+except ModuleNotFoundError:
+    # Github custom download
+    from doc import Documentation
+    from grid import FloatManager, Utils
 
 # Logger for stdout
 logging.basicConfig(

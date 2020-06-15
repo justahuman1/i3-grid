@@ -29,8 +29,6 @@ import threading
 from collections import namedtuple
 from typing import Dict, List
 
-import yaml
-
 try:
     from .xrandr import XRandR
     from .doc import Documentation
@@ -78,7 +76,7 @@ except ModuleNotFoundError:
 # Formatted with Black: https://github.com/psf/black
 
 __author__ = "Sai Valla"
-__version__ = "0.2.3b2"
+__version__ = "0.2.3b3"
 __date__ = "2012-05-20"
 __license__ = "GNU GPL 3"
 
@@ -94,24 +92,22 @@ BASE_CONFIG = {
     k: v
     for k, v in zip(
         [  # snake case keys are non-config keys for advanced tweaking
-            "AutoConvertToFloat",
-            "AutoResize",
-            "SnapLocation",
-            "DefaultGrid",
-            "GridOffset",
-            "DisplayMonitors",
-            "SocketPort",
+            "autoConvertToFloat",
+            "autoResize",
+            "snapLocation",
+            "defaultGrid",
+            "gridOffset",
+            "socketPort",
             "multis",  # the multichannel flag
             "rc_file_name",  # change the name of the dotfile
-            "DefaultResetPercentage",
+            "defaultResetPercentage",
         ],
         [  # default values for config without rc file
             True,
             True,
             0,
-            {"Rows": 2, "Columns": 2},
+            {"rows": 2, "columns": 2},
             [0, 0, 0, 0],
-            {"eDP1", "HDMI1", "VGA", "DP2"},
             65433,
             0,
             "i3gridrc",
@@ -135,8 +131,8 @@ class Middleware:
         for i3-grid middleware. Dispatches result to data_mapper"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
-            logger.info(f"Binding to: {Middleware.host}/{BASE_CONFIG['SocketPort']}")
-            s.bind((Middleware.host, BASE_CONFIG["SocketPort"]))
+            logger.info(f"Binding to: {Middleware.host}/{BASE_CONFIG['socketPort']}")
+            s.bind((Middleware.host, BASE_CONFIG["socketPort"]))
             s.listen()
             while True:
                 # We only have one listener at a time. If we need
@@ -162,7 +158,7 @@ class Middleware:
             # user middleware via python/bash if necessary
             s.setblocking(1)
             try:
-                s.connect((Middleware.host, BASE_CONFIG["SocketPort"]))
+                s.connect((Middleware.host, BASE_CONFIG["socketPort"]))
             except (ConnectionRefusedError, BlockingIOError):
                 return
             s.sendall(Middleware.str2bin(data))
@@ -210,12 +206,12 @@ class Utils:
             "move": lambda *d: i3.move("window", "position", d[0], d[1]),
             "float": lambda *d: i3.floating("enable"),
             "reset": lambda *d: (
-                i3.resize("set", "75ppt", "75ppt")
-                and i3.move("window", " position", "center")
+                i3.resize("set", "75ppt", "75ppt") and
+                i3.move("window", " position", "center")
             ),
             "custom": (
-                lambda *d: i3.resize("set", d[0], d[0])
-                and i3.move("window", "position", "center")
+                lambda *d: i3.resize("set", d[0], d[0]) and
+                i3.move("window", "position", "center")
             ),
         }
         if isinstance(data, str):
@@ -252,50 +248,52 @@ class Utils:
             logger.warning(
                 "No dotfile config found."
                 " Add to ~/.i3gridrc or ~/.config/i3gridrc"
-                " or ~/.config/i3grid/i3gridrc"
-            )
+                " or ~/.config/i3grid/i3gridrc")
             return
 
         with open(target_loc, "r") as f:
-            config = yaml.safe_load(f)
-        if not config or "Settings" not in config:
+            data = [line.strip().replace("\n", "") for line in f.readlines()]
+
+        try:
+            config = eval("".join(
+                [line.replace("true", "True").replace('false', 'False')
+                 for line in data if not line.startswith("//")]))
+        except SyntaxError:
             raise ValueError(
                 "Incorrect i3gridrc file sytax. Please"
-                " follow yaml guidelines and example."
-            )
+                " follow jsonc guidelines and example.")
 
-        settings = config["Settings"]
-        for key in settings:
-            if settings[key] is not None:
-                BASE_CONFIG[key] = settings[key]
+        for key in config:
+            if config[key] is not None:
+                BASE_CONFIG[key] = config[key]
 
     @staticmethod
     def on_the_fly_override(serialize: bool = False, **kwargs) -> None:
         global BASE_CONFIG
         cmdline_serializer = {
-            "rows": "Rows",
-            "cols": "Columns",
+            "rows": "rows",
+            "cols": "columns",
             "target": "target",
-            "perc": "DefaultResetPercentage",
-            "port": "SocketPort",
-            "offset": "GridOffset",
+            "perc": "defaultResetPercentage",
+            "port": "socketPort",
+            "offset": "gridOffset",
             "multis": "multis",
-            "noresize": "AutoResize",
-            "nofloat": "AutoConvertToFloat",
+            "noresize": "autoResize",
+            "nofloat": "autoConvertToFloat",
         }
         if serialize:
             cmdline_serializer = {v: v for v in cmdline_serializer.values()}
 
-        _g_tst = {"rows", "cols", "Rows", "Columns"}
+        _g_tst = {"rows", "cols", "columns"}
         _auto_booleans = {"noresize", "nofloat"}
         for arg in kwargs:
             if kwargs[arg] is None or arg not in cmdline_serializer:
                 continue
             elif arg in _g_tst:
-                BASE_CONFIG["DefaultGrid"][cmdline_serializer[arg]] = kwargs[arg]
-            elif arg == "target" or arg == "SnapLocation":
-                BASE_CONFIG["SnapLocation"] = kwargs[arg]
-            elif arg == "offset" or arg == "GridOffset":
+                BASE_CONFIG["defaultGrid"][cmdline_serializer[arg]] = kwargs[arg]
+            elif arg == "target" or arg == "snapLocation":
+                BASE_CONFIG["snapLocation"] = kwargs[arg]
+            elif arg == "offset" or arg == "gridOffset":
                 BASE_CONFIG[cmdline_serializer[arg]] = Utils.offset_test(
                     kwargs[arg], cmdline_serializer[arg]
                 )
@@ -452,14 +450,14 @@ class MonitorCalculator(FloatUtils):
     ) -> Location:
         """Internal offset manager to apply offsets
         to given quadrant based on operation."""
-        rows = BASE_CONFIG["DefaultGrid"]["Rows"]
-        cols = BASE_CONFIG["DefaultGrid"]["Columns"]
-        assert BASE_CONFIG["SnapLocation"] <= (
+        rows = BASE_CONFIG["defaultGrid"]["rows"]
+        cols = BASE_CONFIG["defaultGrid"]["columns"]
+        assert BASE_CONFIG["snapLocation"] <= (
             rows * cols
         ), "Incorrect Target; not in grid"
         if mode == "resize":
             normalize = lambda *xy: int(
-                (BASE_CONFIG["GridOffset"][xy[0]] + BASE_CONFIG["GridOffset"][xy[1]])
+                (BASE_CONFIG["gridOffset"][xy[0]] + BASE_CONFIG["gridOffset"][xy[1]])
                 / (xy[2] or 1)
             )
             r_l = normalize(3, 1, cols)
@@ -467,7 +465,7 @@ class MonitorCalculator(FloatUtils):
             return Location(point.width - r_l, point.height - t_b)
         elif mode == "snap":
             return Location(
-                width=BASE_CONFIG["GridOffset"][1], height=BASE_CONFIG["GridOffset"][0]
+                width=BASE_CONFIG["gridOffset"][1], height=BASE_CONFIG["gridOffset"][0]
             )
         return point
 
@@ -478,7 +476,7 @@ class MonitorCalculator(FloatUtils):
         3) If Tensors are intersecting: monitor center - offset = true center"""
         display = self.area_matrix[self.workspace_num]
         window = self.get_target(self.focused_node)
-        if center or BASE_CONFIG["SnapLocation"] == 0:
+        if center or BASE_CONFIG["snapLocation"] == 0:
             # Abs center (2, 2)
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
@@ -515,8 +513,8 @@ class MonitorCalculator(FloatUtils):
         return Location(width=node["rect"]["width"], height=node["rect"]["height"])
 
     def find_grid_axis(self, loc: int = None) -> tuple:
-        loc = loc or BASE_CONFIG["SnapLocation"]
-        return divmod(loc - 1, BASE_CONFIG["DefaultGrid"]["Columns"])
+        loc = loc or BASE_CONFIG["snapLocation"]
+        return divmod(loc - 1, BASE_CONFIG["defaultGrid"]["columns"])
 
     def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
         """Calculates all quadrants in the given xrandr matrix with proper offset
@@ -563,7 +561,7 @@ class MonitorCalculator(FloatUtils):
         chosen_range = [int(i) for i in BASE_CONFIG["multis"]]
         mid = (min(chosen_range), max(chosen_range))
         total_size = (
-            BASE_CONFIG["DefaultGrid"]["Rows"] * BASE_CONFIG["DefaultGrid"]["Columns"]
+            BASE_CONFIG["defaultGrid"]["rows"] * BASE_CONFIG["defaultGrid"]["columns"]
         )
         assert (
             0 < mid[0] <= total_size and mid[1] <= total_size
@@ -611,7 +609,7 @@ class Movements(MonitorCalculator):
 
     def custom_resize(self, **kwargs) -> list:
         """Resize window to custom screen percentage"""
-        cp = BASE_CONFIG["DefaultResetPercentage"]
+        cp = BASE_CONFIG["defaultResetPercentage"]
         return Utils.dispatch_i3msg_com("custom", data=f"{cp}ppt")
 
     def snap_to_grid(self, **kwargs) -> list:
@@ -663,7 +661,7 @@ class Movements(MonitorCalculator):
         to the run function. Kwargs:
         floating {boolean}: Applies the actions to only the floating windows."""
         global BASE_CONFIG
-        _tmp_loc = BASE_CONFIG["SnapLocation"]
+        _tmp_loc = BASE_CONFIG["snapLocation"]
         self.post_commands(all_key=True, passive=False)
         # all override for only floating win
         if "floating" in kwargs and kwargs["floating"]:
@@ -671,14 +669,14 @@ class Movements(MonitorCalculator):
                 d for d in self.current_windows if d[2] == "user_on"
             ]
 
-        BASE_CONFIG["SnapLocation"] = 1  # Temporary changes to data
+        BASE_CONFIG["snapLocation"] = 1  # Temporary changes to data
         for w in self.current_windows:
             for cmd in commands:
                 self.focus_window(id=w[1])  # focus win
                 self.run(cmd, all=True, **kwargs)  # dispatch final cmd
                 if cmd not in self.passive_actions:  # iterate target
-                    BASE_CONFIG["SnapLocation"] += 1
-        BASE_CONFIG["SnapLocation"] = _tmp_loc  # Restore state
+                    BASE_CONFIG["snapLocation"] += 1
+        BASE_CONFIG["snapLocation"] = _tmp_loc  # Restore state
 
         return self.current_windows
 
@@ -694,7 +692,7 @@ class FloatManager(Movements, Middleware):
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(serialize=False, **kwargs)
         # 3) Run initalizing commands
-        self.passive_actions = {"resize", "float", "hide"}
+        self.passive_actions = {"resize", "float", "hide", "listen"}
         self.workspace_num = self.get_wk_number()
         self._TERMSIG = kwargs.get("all", False)
         floating = kwargs.get("floating", False)
@@ -727,9 +725,9 @@ class FloatManager(Movements, Middleware):
             return
 
     def run_flags(self) -> None:
-        if BASE_CONFIG["AutoConvertToFloat"]:
+        if BASE_CONFIG["autoConvertToFloat"]:
             self.make_float()
-        if BASE_CONFIG["AutoResize"]:
+        if BASE_CONFIG["autoResize"]:
             self.make_resize()
 
     def run(self, cmd: str, **kwargs) -> list:
@@ -764,7 +762,7 @@ class FloatManager(Movements, Middleware):
 
         if not self.cache_grid:
             self.float_grid = self.calculate_grid(
-                BASE_CONFIG["DefaultGrid"]["Rows"],
-                BASE_CONFIG["DefaultGrid"]["Columns"],
+                BASE_CONFIG["defaultGrid"]["rows"],
+                BASE_CONFIG["defaultGrid"]["columns"],
                 self.area_matrix[self.workspace_num],
             )

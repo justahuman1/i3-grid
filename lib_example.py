@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import i3grid
 
@@ -28,10 +27,10 @@ new_config = i3grid.BASE_CONFIG
 # Check the possible configurations that can be made
 # print(new_config.keys())
 
-new_config["DefaultGrid"] = {"Rows": 3, "Columns": 1}
+new_config["defaultGrid"] = {"rows": 3, "columns": 1}
 # In this example, Rows * Columns = 3
 # SnapLocation must be less than this number.
-new_config["SnapLocation"] = 2
+new_config["snapLocation"] = 2
 
 # Update the keys (Will throw error if misconfigured)
 manager.update_config(new_config)

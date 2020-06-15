@@ -1,22 +1,5 @@
 #!/usr/bin/env bash
 
-#  License: GPL-3.0
-#  Copyright (C) 2020 Sai Valla
-#  URL: https://github.com/justahuman1/i3-grid
-
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 ## ---- Rofi Frontend ----
 # Currently, the grid resizing is static. If you change it to a different
 # number, you **may need to change the height and width correspondingly in the rasi file.
@@ -31,6 +14,11 @@ export TXT="#bdc3c3"                    # Text color
 export GRID_FONT="Iosevka 13"           # Font (Include size)
 export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
 export SBAR="#242222"                   # Search Bar background
+
+## FIXME: Path to the src python file/module
+grid_src="-m i3grid"
+# Uncomment below line if cloned from github
+# grid_src="../i3-grid/i3grid"
 
 # Initalize
 join() { local IFS="$1"; shift; echo "$*"; }
@@ -67,7 +55,7 @@ grid+=(
   "SF" # Snaps all current *floating windows into a grid
   "X" # Custom col, row, target parsing
 
-  ## FIXME: Add command here. Define it's call in the case statement below (line 139).
+  ## FIXME: Add command here. Define it's call in the case statement below (line 125).
 )
 options=""
 for i in ${grid[*]}; do
@@ -76,8 +64,6 @@ done
 # grid options passed to rofi
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
 len=${#chosen}
-# Path to the src python file/module
-grid_src="-m i3grid"
 if [[ "$len" -gt "2" ]]; then  # if multi select
   declare -a arr
   arr=( $(echo $chosen | awk '{split($0,a," ")} END {for(n in a){ print a[n] }}') )
