@@ -98,6 +98,7 @@ The method descriptions are as follows:
 - focus_window
 
       def focus_window(self, **kwargs) -> list:
+
       Focuses on the window with given kwargs `id`
 
 - hide_scratchpad

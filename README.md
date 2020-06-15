@@ -6,7 +6,14 @@ i3, our beloved window manager, has placed an emphasis on tiling and tabbed layo
 
 The lack of standard tools has resulted in personalized scripts [scattered](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) throughout GitHub which are inefficient and static to the user. This module aims to allow for fast and dynamic floating window management with minimal input. i3-grid is also monitor agnostic and has a clean rofi interface with highly configurable commands.
 
-Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode). Please keep in mind that this is still in beta. Issues are bound to happen.
+Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode). _Please keep in mind that i3-grid is still in beta. Issues are bound to happen_.
+
+**Beta 3 has been pushed to all distributions (less dependencies). Please update & recurl the newest rc file format.**
+
+```
+ pip install --upgrade i3-grid
+ curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/.i3gridrc > ~/.config/i3grid/i3gridrc
+```
 
 ## Demo:
 
@@ -14,7 +21,7 @@ Current planned updates include templates (automating startup and grid managemen
   <img src="https://i.imgur.com/0QVD4sd.gif"/>
 </p>
 <p align="center">
-  <img src="https://i.imgur.com/faMkae8.png"/>
+  <img src="https://i.imgur.com/y3jEaBr.png"/>
 </p>
 
 Why does this exist?<sup>[1](https://github.com/i3/i3/issues/1949#issuecomment-142231260)</sup> <sup>[2](https://www.reddit.com/r/i3wm/comments/97hc7u/how_to_move_window_relative_to_display/e4955ff/)</sup> <sup>[3](https://gist.github.com/bhepple/5c43e83e945a42297ba6433ee8ba88ce) </sup>
@@ -92,7 +99,6 @@ ZSH Alias (_Optional_)
 Help menu
 
     python3 -m i3grid -h
-        *Can be added to path to simply call `i3grid` on the cli
 
 Center window
 
@@ -163,6 +169,7 @@ PR's very welcome. Order of importance will be according to issues and PR count.
 
 - Search indexing is suboptimal for double digits (rofi limitations)
 - Rofi UI does not resize dynamically for large col and row digits
+- Percentage commands do not work with older versions of i3. Possible workarounds in consideration.
 
 ## Crushed Bugs
 
