@@ -195,10 +195,8 @@ class Utils:
 
     @staticmethod
     def dispatch_i3msg_com(command: str, data: Location = Location(1189, 652)) -> list:
-        """Internal function used to dispatch specific command strings to i3-ipc"""
-        # Immutable location tuple accounts for mutation error
-        if not isinstance(data, (list, tuple)) and len(data) == 2:
-            raise ValueError("Incorrect data type/length for i3 command")
+        """Internal function used to dispatch specific command strings to
+        i3-ipc. Data may also be a string."""
 
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
@@ -206,7 +204,7 @@ class Utils:
             "move": lambda *d: i3.move("window", "position", d[0], d[1]),
             "float": lambda *d: i3.floating("enable"),
             "reset": lambda *d: (
-                i3.resize("set", "75ppt", "75ppt") and
+                i3.resize("set", f"{d[0]}ppt", f"{d[0]}ppt") and
                 i3.move("window", " position", "center")
             ),
             "custom": (
@@ -621,7 +619,9 @@ class Movements(MonitorCalculator):
     def reset_win(self, **kwargs) -> list:
         """Moves to center and applies default tile
         to float properties (center, 75ppt)"""
-        return Utils.dispatch_i3msg_com(command="reset")
+        return Utils.dispatch_i3msg_com(
+               command="reset",
+               data=str(BASE_CONFIG['defaultResetPercentage']))
 
     def make_float(self, **kwargs) -> list:
         """Moves the current window into float mode if it is not
