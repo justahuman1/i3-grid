@@ -40,17 +40,20 @@ Install via Python:
 
     pip3 install --user i3-grid
 
-Install via GitHub:
-
-    git clone https://github.com/justahuman1/i3-grid.git
-
-    cd i3-grid/i3-grid/
-
-    *This requires changing the `grid_src` variable in the manager.sh rofi script
-
 Install via AUR:
 
     yay i3-grid
+
+Install via GitHub:
+
+    git clone https://github.com/justahuman1/i3-grid.git --branch 0.2.3b3
+
+    rofi:
+        # This requires changing the `grid_src` variable in the manager.sh script
+        cd i3-grid/rofi && ./manager.sh
+
+    cli:
+        cd i3-grid/i3-grid && python3 -m i3grid -h
 
 ### Configuration
 
@@ -58,27 +61,30 @@ Install via AUR:
 
         bash <( curl -s https://raw.githubusercontent.com/justahuman1/i3-grid/master/build/install.sh )
 
-**OR**
+    <details>
+    <summary>Manual setup (Not Recommended)</summary>
+    <br>
 
-1.  Manual setup:
+            1.  Create a dotfile (`.i3gridrc`).
 
-    1.  Create a dotfile (`.i3gridrc`). Possible locations are:
+                    mkdir ~/.config/i3grid && cd ~/.config/i3grid
+                    curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/.i3gridrc > i3gridrc
 
-            # More specific locations are searched first and will override the previous
+                    # More specific locations are searched first and will override the previous. Possible locations:
+                        ~/.i3gridrc
+                        ~/.config/i3gridrc
+                        ~/.config/i3grid/i3gridrc
 
-            ~/.i3gridrc
-            ~/.config/i3gridrc
-            ~/.config/i3grid/i3gridrc
+            2.  Downloading the Rofi UI (*Optional | Minimum rofi version: 1.5.2)
 
-    1.  Downloading the Rofi UI (_Optional_)
+                    # Place these files in any location you plan to run the application from.
+                    # The default location is ~/.config/i3grid/{manager.sh, matrix.rasi, i3gridrc}
 
-            # Place these files in any location you plan to run the application from.
-            # The default location is ~/.config/i3grid/{manager.sh, matrix.rasi, i3gridrc}
+                    curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/manager.sh > manager.sh
+                    curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/matrix.rasi > matrix.rasi
+                    chmod +x manager.sh
 
-            curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/manager.sh > manager.sh
-            curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/rofi/matrix.rasi > matrix.rasi
-            curl https://raw.githubusercontent.com/justahuman1/i3-grid/master/.i3gridrc > i3gridrc
-            chmod +x manager.sh
+    </details>
 
 2.  Shortcuts:
 
@@ -104,9 +110,13 @@ Center window
 
     python3 -m i3grid center
 
-Top right corner
+Bottom right corner (_Change offsets in the rc file if necessary_)
 
-    python3 -m i3grid snap --target 2  # Using default rc
+    python3 -m i3grid snap --target 4 --rows 2 --cols 2
+
+Rofi UI
+
+    ~/.config/i3grid/manager.sh
 
 See the following for more detailed examples:
 
