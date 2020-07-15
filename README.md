@@ -136,7 +136,7 @@ See the following for more detailed examples:
 
 ### Rofi Vim Bindings
 
-Default bindings using the arrow keys and enter keys are available. Vim keys are supported improve the user speed of using the UI.
+Default bindings using the arrow keys and enter keys are available. Vim keys are supported (and encouraged).
 
     - h: row left
     - j: row down
@@ -149,7 +149,8 @@ Default bindings using the arrow keys and enter keys are available. Vim keys are
     - e: escape
 
 > NOTE: The keybindings interfere with the search. To search for 'h', use shift to bypass and search with the letter 'H'.
-> All keybindings can be changed in the `matrix.rasi` file under the \*configuration block (`kb-*`)
+
+> All keybindings may be changed in the `matrix.rasi` file under the \*configuration block (`kb-*`)
 
 ## Todos
 

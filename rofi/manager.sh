@@ -16,9 +16,9 @@ export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
 export SBAR="#242222"                   # Search Bar background
 
 ## FIXME: Path to the src python file/module
-grid_src="-m i3grid"
+# grid_src="-m i3grid"
 # Uncomment below line if cloned from github
-# grid_src="../i3-grid/i3grid"
+grid_src="../i3-grid/i3grid"
 
 # Initalize
 join() { local IFS="$1"; shift; echo "$*"; }
@@ -54,6 +54,7 @@ grid+=(
   "R" # Reset to i3 default center (75% screen)
   "SF" # Snaps all current *floating windows into a grid
   "X" # Custom col, row, target parsing
+  "P"
 
   ## FIXME: Add command here. Define it's call in the case statement below (line 125).
 )
@@ -105,6 +106,11 @@ case "$chosen" in
 ;;
 "R")
   python $grid_src reset
+;;
+"P")
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  OUTPUT=$("$DIR/i3classifier.sh")
+  python $grid_src snap --filter "$OUTPUT"
 ;;
 "SF")
   python $grid_src snap --floating --rows 3 --cols 2

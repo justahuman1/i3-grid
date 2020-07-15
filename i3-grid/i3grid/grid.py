@@ -186,7 +186,7 @@ class Utils:
         super().__init__()
 
     @staticmethod
-    def dipatch_bash_command(command_str: str) -> str:
+    def dispatch_bash_command(command_str: str) -> str:
         """Dispatches command_str to a bash subshell."""
         if not command_str or command_str.strip() == "":
             raise ValueError("null command")
@@ -323,6 +323,8 @@ class FloatUtils:
     def __init__(self) -> None:
         self.active_output = self.current_floating_windows = None
         self.area_matrix, self.current_display = self._calc_metadata()
+        # self.focus_tree = None
+        self.current_windows = self.focus_tree = None
         assert len(self.current_display) > 0, "Incorrect Display Input"
 
     def update_config(self, val: dict) -> bool:
@@ -337,11 +339,11 @@ class FloatUtils:
         self.cache_grid = None  # Update cache
         return True
 
-    def assign_focus_node(self, all_key=False) -> None:
-        tree = i3.get_tree()
+    def assign_focus_node(self, all_key=False, filter_bypass=False) -> None:
+        self.focus_tree = self.focus_tree or i3.get_tree()
         wkspc = [
             node
-            for node in tree["nodes"]
+            for node in self.focus_tree["nodes"]
             if node["name"] == self.current_display["output"]
         ]
         assert len(wkspc) > 0, "window could not be found"
@@ -349,8 +351,13 @@ class FloatUtils:
         for w in wkspc:
             self.find_focused_window(w)
 
+        if filter_bypass:
+            all_key = True
+
         if not all_key:
             return
+
+        print("In filter!")
 
         wkspc = [k["nodes"] for k in wkspc[0]["nodes"] if k["name"] == "content"][0]
         fcsd = [i for i in self.all_outputs if i["focused"]][0]["name"]
@@ -377,6 +384,7 @@ class FloatUtils:
         names = grep_nest(data, "id", key2="name", key3="floating")
         self.current_windows = [i for i in names if i[0] and i[0] != fcsd]
         self.current_floating_windows = [i for i in self.current_windows]
+        self._cache_current_windows = True
 
     def find_focused_window(self, node: dict) -> None:
         """Sets the focused_node attribute"""
@@ -585,6 +593,20 @@ class MonitorCalculator(FloatUtils):
             for window in windows
         ]
 
+    def title_to_id(self, title_or_id: str) -> str:
+        if title_or_id is None:
+            return
+        # logger.info("Title 1: ", title_or_id)
+        print(title_or_id)
+        print("Converting title to id")
+        print(self.current_windows)
+        # logger.info(title_or_id)
+        exit
+
+        # Check if id (number regex)
+        # if title_or_id
+        pass
+
 
 class Movements(MonitorCalculator):
     def __init__(self,) -> None:
@@ -634,18 +656,19 @@ class Movements(MonitorCalculator):
         scratchpad) or to kwargs `id` window."""
         id = kwargs.get("id", None)
         dim = Utils.i3_custom("scratchpad show", id)
-        return Utils.dipatch_bash_command(dim)
+        return Utils.dispatch_bash_command(dim)
 
     def focus_window(self, **kwargs) -> list:
         """Focuses on the given kwargs 'id' window"""
         if "id" not in kwargs and not kwargs["id"]:
             raise ValueError("No `id` kwargs given for window focus.")
         dim = Utils.i3_custom("focus", kwargs["id"])
-        return Utils.dipatch_bash_command(dim)  # focus
+        return Utils.dispatch_bash_command(dim)  # focus
 
     def multi_select(self, **kwargs) -> list:
         """Supports selection ranges
         that are continous and non-perpendicular."""
+        # TODO: Extend to id -> Prefocus and dispatch and focus back to orig
         if BASE_CONFIG["multis"] == 0:
             return self.move_to_center()
         elif len(BASE_CONFIG["multis"]) == 1:
@@ -695,10 +718,14 @@ class FloatManager(Movements, Middleware):
         self.passive_actions = {"resize", "float", "hide", "listen"}
         self.workspace_num = self.get_wk_number()
         self._TERMSIG = kwargs.get("all", False)
+        self.filter_mode = kwargs.get("filter", None)
         floating = kwargs.get("floating", False)
 
+        # Filter bypass
+        if self.filter_mode is not None:
+            pass
+
         self.post_commands(all_key=self._TERMSIG)  # Sync to state
-        kwargs
         kwargs["commands"] = kwargs.get("commands", list(Documentation.actions))
         self.com_map = {
             c: e
@@ -717,6 +744,7 @@ class FloatManager(Movements, Middleware):
                 ],
             )
         }
+
         if self._TERMSIG or floating:  # 4) Transform to global flags
             if "actions" not in kwargs:
                 raise ValueError("Missing kwargs `commands` for all_override")
@@ -740,6 +768,8 @@ class FloatManager(Movements, Middleware):
         passive = True if cmd in self.passive_actions else False
         _ak = kwargs.get("all", False)
         self.run_flags()  # run user flags, if any
+        _filter_id = self.filter_mode
+        kwargs['id'] = self.title_to_id(self.filter_mode)
         self.post_commands(all_key=_ak, passive=passive)  # sync state
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
@@ -749,6 +779,7 @@ class FloatManager(Movements, Middleware):
                     "modifying_node": self.focused_node,
                     "grid": self.cache_grid,
                     "monitors": self.displays,
+                    "windows": self.current_windows
                 },
             ),
         ).start()  # Anonymous thread, since dataflow is unidirectional.
@@ -758,7 +789,7 @@ class FloatManager(Movements, Middleware):
         """Runs all the state related commands with
         proper cache maintanence to minimize rpc."""
         if not passive:
-            self.assign_focus_node(all_key)
+            self.assign_focus_node(all_key, filter_bypass=self.filter_mode)
 
         if not self.cache_grid:
             self.float_grid = self.calculate_grid(

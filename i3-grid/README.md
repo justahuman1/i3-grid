@@ -184,10 +184,10 @@ A majority of these functions are for the library itself and may be ignored.
       Constructs a command using the command string. If ID is passed it, it will customize
       the raw function to apply to the window with the given ID.
 
-- dipatch_bash_command
+- dispatch_bash_command
 
       @staticmethod
-      def dipatch_bash_command(command_str: str) -> str:
+      def dispatch_bash_command(command_str: str) -> str:
 
       Dispatch a bash command and receive the output as a string. This opens a
       bash subprocess. This can be combined with i3_custom to dispatch custom functions.
