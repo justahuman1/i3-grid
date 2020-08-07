@@ -14,13 +14,13 @@ export TXT="#bdc3c3"                    # Text color
 export GRID_FONT="Iosevka 13"           # Font (Include size)
 export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
 export SBAR="#242222"                   # Search Bar background
-export WIDTH="220px"                    # Width of rofi widget
+export GWIDTH="220px"                    # Width of rofi widget
 
 ## FIXME: Path to the src python file/module
 grid_src="-m i3grid"
 # Uncomment below line if cloned from github
 # grid_src="../i3-grid/i3grid"
-# The python interpreter to use
+# The system python interpreter to use
 PY_ENV="/usr/bin/python3"
 
 # Initalize
@@ -29,7 +29,7 @@ join() { local IFS="$1"; shift; echo "$*"; }
 app_abs_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 rofi_command="rofi -i -theme $app_abs_path/matrix.rasi -multi-select"
 cache_file="$app_abs_path/grid.cache"
-[ -f "$cache_file" ] || touch "$cache_file"  # Make cache file if not exists
+# [ -f "$cache_file" ] || touch "$cache_file"  # Make cache file if not exists
 RUN_COMMAND="$PY_ENV $grid_src"
 # We use a bash function to dynamically generate the
 # grid for different canvases on the fly.
@@ -71,6 +71,7 @@ for i in ${grid[*]}; do
 done
 # grid options passed to rofi
 chosen="$(echo -e "$options" | $rofi_command -dmenu -p "Grid:" -selected-row 0)"
+[ -z "$chosen" ] && exit # Exit if no command is chosen
 len=${#chosen}
 if [[ "$len" -gt "2" ]]; then  # if multi select
   declare -a arr
@@ -87,7 +88,8 @@ else
   # Grid options
   case "$chosen" in
   "A")
-    echo "$RUN_COMMAND snap --all" >> $cache_file
+    $RUN_COMMAND snap --all
+    exit
   ;;
   "C")
     p="$($rofi_command -dmenu -p "% -" -selected-row 0)"
@@ -95,22 +97,26 @@ else
   ;;
   "D")
     target="$($rofi_command -dmenu -p 'Target:' -selected-row 0)"
-    echo "$RUN_COMMAND snap --target $target" >> $cache_file
+    [ -z "$target" ] && exit || echo "$RUN_COMMAND snap --target $target" >> $cache_file
   ;;
   "F")
-    echo "$RUN_COMMAND csize --perc 100" >> $cache_file
+    $RUN_COMMAND csize --perc 100
+    exit
   ;;
   "G")
-     echo "$RUN_COMMAND snap --target 1 --rows 2 --cols 1 --offset 0 80 0 80" >> $cache_file
+    $RUN_COMMAND snap --target 1 --rows 2 --cols 1 --offset 0 80 0 80
+    exit
   ;;
   "H")
-    echo "$RUN_COMMAND hide --noresize --nofloat --all" >> $cache_file
+    $RUN_COMMAND hide --noresize --nofloat --all
+    exit
   ;;
   "R")
-    echo "$RUN_COMMAND reset" >> $cache_file
+    $RUN_COMMAND reset
+    exit
   ;;
   "RR")
-    WIDTH="380px"
+    GWIDTH="380px"
     IFS=
     data=$( sort $cache_file | uniq | awk 'NF' | awk '{out=$4; for(i=5;i<=NF;i++){out=out" "$i}; print out}' )
     custom=$( (echo $data) | rofi -i -theme $app_abs_path/matrix.rasi -multi-select -dmenu -p "Cached: ")
@@ -119,10 +125,12 @@ else
   "P")
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
     OUTPUT=$("$DIR/i3classifier.sh")
-    echo "$RUN_COMMAND snap --filter "$OUTPUT"" >> $cache_file
+    $RUN_COMMAND snap --filter "$OUTPUT"
+    exit
   ;;
   "SF")
-    echo "$RUN_COMMAND snap --floating --rows 3 --cols 2" >> $cache_file
+    $RUN_COMMAND snap --floating --rows 3 --cols 2
+    exit
   ;;
   "X")
     custom="$($rofi_command -dmenu -p "c r t:" -selected-row 0)"
@@ -140,7 +148,7 @@ else
   *)
     # Any number outside the grid can be used as a custom percentage resize
     echo "$RUN_COMMAND csize --perc $chosen" >> $cache_file
-    # Uncomment to see the raw command sent to i3-grid
+    # Uncomment to see the raw command sent to i3-grid (for scripting purposes, etc.)
     # echo "$RUN_COMMAND csize --perc $chosen"
   ;;
   esac
