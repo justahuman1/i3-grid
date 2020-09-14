@@ -8,7 +8,7 @@ The lack of standard tools has resulted in personalized scripts [scattered](http
 
 Current planned updates include templates (automating startup and grid management), temporary scratch pads (similar to minimizing windows), and potentially a daemon to auto snap floating windows to quadrants (similar to tiling mode). _Please keep in mind that i3-grid is still in beta. Issues are bound to happen_.
 
-**Beta 3 has been pushed to all distributions (less dependencies). Please update & recurl the newest rc file format.**
+**September 2020: Rofi has been updated to v1.6.0 and presents some breaking UI changes. A fix has been started. (Functionality is still stable).**
 
 ```
  pip install --upgrade i3-grid
