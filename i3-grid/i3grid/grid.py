@@ -131,7 +131,9 @@ class Middleware:
         for i3-grid middleware. Dispatches result to data_mapper"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
-            logger.info(f"Binding to: {Middleware.host}/{BASE_CONFIG['socketPort']}")
+            logger.info(
+                f"Binding to: {Middleware.host}/{BASE_CONFIG['socketPort']}"
+            )
             s.bind((Middleware.host, BASE_CONFIG["socketPort"]))
             s.listen()
             while True:
@@ -194,7 +196,9 @@ class Utils:
         return out.stdout
 
     @staticmethod
-    def dispatch_i3msg_com(command: str, data: Location = Location(1189, 652)) -> list:
+    def dispatch_i3msg_com(
+        command: str, data: Location = Location(1189, 652)
+    ) -> list:
         """Internal function used to dispatch specific command strings to
         i3-ipc. Data may also be a string."""
 
@@ -204,12 +208,12 @@ class Utils:
             "move": lambda *d: i3.move("window", "position", d[0], d[1]),
             "float": lambda *d: i3.floating("enable"),
             "reset": lambda *d: (
-                i3.resize("set", f"{d[0]}ppt", f"{d[0]}ppt") and
-                i3.move("window", " position", "center")
+                i3.resize("set", f"{d[0]}ppt", f"{d[0]}ppt")
+                and i3.move("window", " position", "center")
             ),
             "custom": (
-                lambda *d: i3.resize("set", d[0], d[0]) and
-                i3.move("window", "position", "center")
+                lambda *d: i3.resize("set", d[0], d[0])
+                and i3.move("window", "position", "center")
             ),
         }
         if isinstance(data, str):
@@ -246,20 +250,28 @@ class Utils:
             logger.warning(
                 "No dotfile config found."
                 " Add to ~/.i3gridrc or ~/.config/i3gridrc"
-                " or ~/.config/i3grid/i3gridrc")
+                " or ~/.config/i3grid/i3gridrc"
+            )
             return
 
         with open(target_loc, "r") as f:
             data = [line.strip().replace("\n", "") for line in f.readlines()]
 
         try:
-            config = eval("".join(
-                [line.replace("true", "True").replace('false', 'False')
-                 for line in data if not line.startswith("//")]))
+            config = eval(
+                "".join(
+                    [
+                        line.replace("true", "True").replace("false", "False")
+                        for line in data
+                        if not line.startswith("//")
+                    ]
+                )
+            )
         except SyntaxError:
             raise ValueError(
                 "Incorrect i3gridrc file sytax. Please"
-                " follow jsonc guidelines and example.")
+                " follow jsonc guidelines and example."
+            )
 
         for key in config:
             if config[key] is not None:
@@ -288,7 +300,9 @@ class Utils:
             if kwargs[arg] is None or arg not in cmdline_serializer:
                 continue
             elif arg in _g_tst:
-                BASE_CONFIG["defaultGrid"][cmdline_serializer[arg]] = kwargs[arg]
+                BASE_CONFIG["defaultGrid"][cmdline_serializer[arg]] = kwargs[
+                    arg
+                ]
             elif arg == "target" or arg == "snapLocation":
                 BASE_CONFIG["snapLocation"] = kwargs[arg]
             elif arg == "offset" or arg == "gridOffset":
@@ -304,7 +318,9 @@ class Utils:
     @staticmethod
     def offset_test(o, k) -> List[int]:
         tmp_arr = []
-        assert len(o) <= 4, "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
+        assert (
+            len(o) <= 4
+        ), "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
         while len(o) != 4:
             o += [0]
         tmp_arr = [int(i) for i in o]
@@ -359,7 +375,9 @@ class FloatUtils:
 
         print("In filter!")
 
-        wkspc = [k["nodes"] for k in wkspc[0]["nodes"] if k["name"] == "content"][0]
+        wkspc = [
+            k["nodes"] for k in wkspc[0]["nodes"] if k["name"] == "content"
+        ][0]
         fcsd = [i for i in self.all_outputs if i["focused"]][0]["name"]
 
         def grep_nest(obj, key, key2, key3) -> list:
@@ -409,7 +427,8 @@ class FloatUtils:
             if display["name"].startswith("xroot"):
                 continue
             display_screen_location = Location(
-                width=display["rect"]["width"], height=display["rect"]["height"]
+                width=display["rect"]["width"],
+                height=display["rect"]["height"],
             )
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
@@ -429,7 +448,11 @@ class FloatUtils:
         return c_monitor
 
     def match(self, display: dict) -> bool:
-        validations = [["name", "output"], ["current_workspace", "name"], "rect"]
+        validations = [
+            ["name", "output"],
+            ["current_workspace", "name"],
+            "rect",
+        ]
         for val in validations:
             if val == "rect":
                 if display[val]["width"] != self.current_display[val]["width"]:
@@ -463,7 +486,10 @@ class MonitorCalculator(FloatUtils):
         ), "Incorrect Target; not in grid"
         if mode == "resize":
             normalize = lambda *xy: int(
-                (BASE_CONFIG["gridOffset"][xy[0]] + BASE_CONFIG["gridOffset"][xy[1]])
+                (
+                    BASE_CONFIG["gridOffset"][xy[0]]
+                    + BASE_CONFIG["gridOffset"][xy[1]]
+                )
                 / (xy[2] or 1)
             )
             r_l = normalize(3, 1, cols)
@@ -471,7 +497,8 @@ class MonitorCalculator(FloatUtils):
             return Location(point.width - r_l, point.height - t_b)
         elif mode == "snap":
             return Location(
-                width=BASE_CONFIG["gridOffset"][1], height=BASE_CONFIG["gridOffset"][0]
+                width=BASE_CONFIG["gridOffset"][1],
+                height=BASE_CONFIG["gridOffset"][0],
             )
         return point
 
@@ -516,16 +543,22 @@ class MonitorCalculator(FloatUtils):
         return orig_point
 
     def get_target(self, node: dict) -> Location:
-        return Location(width=node["rect"]["width"], height=node["rect"]["height"])
+        return Location(
+            width=node["rect"]["width"], height=node["rect"]["height"]
+        )
 
     def find_grid_axis(self, loc: int = None) -> tuple:
         loc = loc or BASE_CONFIG["snapLocation"]
         return divmod(loc - 1, BASE_CONFIG["defaultGrid"]["columns"])
 
-    def calculate_grid(self, rows: int, cols: int, display: Location) -> Tensor:
+    def calculate_grid(
+        self, rows: int, cols: int, display: Location
+    ) -> Tensor:
         """Calculates all quadrants in the given xrandr matrix with proper offset
         querying and management."""
-        main_loc = Location(int(display.width / cols), int(display.height / rows))
+        main_loc = Location(
+            int(display.width / cols), int(display.height / rows)
+        )
         # Account for window size offset (grid quadrant size - offset/(rows | cols))
         self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
         grid = [[0 for _ in range(cols)] for _ in range(rows)]
@@ -537,7 +570,9 @@ class MonitorCalculator(FloatUtils):
             row_tracker = row
             for col in range(len(grid[row])):
                 if row != 0 or col != 0:  # Top row and left col
-                    roll_width = rolling_dimension.width + self.per_quadrant_dim.width
+                    roll_width = (
+                        rolling_dimension.width + self.per_quadrant_dim.width
+                    )
                 if row_match != row_tracker:
                     roll_height = (
                         rolling_dimension.height + self.per_quadrant_dim.height
@@ -567,13 +602,17 @@ class MonitorCalculator(FloatUtils):
         chosen_range = [int(i) for i in BASE_CONFIG["multis"]]
         mid = (min(chosen_range), max(chosen_range))
         total_size = (
-            BASE_CONFIG["defaultGrid"]["rows"] * BASE_CONFIG["defaultGrid"]["columns"]
+            BASE_CONFIG["defaultGrid"]["rows"]
+            * BASE_CONFIG["defaultGrid"]["columns"]
         )
         assert (
             0 < mid[0] <= total_size and mid[1] <= total_size
         ), "Incorrect grid inputs"
 
-        loc = [self.find_grid_axis(loc=mid[0]), self.find_grid_axis(loc=mid[1])]
+        loc = [
+            self.find_grid_axis(loc=mid[0]),
+            self.find_grid_axis(loc=mid[1]),
+        ]
         self.per_quadrant_dim = Location(
             (
                 self.per_quadrant_dim.width
@@ -642,8 +681,8 @@ class Movements(MonitorCalculator):
         """Moves to center and applies default tile
         to float properties (center, 75ppt)"""
         return Utils.dispatch_i3msg_com(
-               command="reset",
-               data=str(BASE_CONFIG['defaultResetPercentage']))
+            command="reset", data=str(BASE_CONFIG["defaultResetPercentage"])
+        )
 
     def make_float(self, **kwargs) -> list:
         """Moves the current window into float mode if it is not
@@ -675,7 +714,9 @@ class Movements(MonitorCalculator):
             return self.move_to_center()
 
         top_left = self.multi_pnt_calc()
-        return Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left[1]))
+        return Utils.dispatch_i3msg_com(
+            "move", self.xrandr_calulator(top_left[1])
+        )
 
     def all_override(self, commands: list, **kwargs) -> List[tuple]:
         """The overrider for the run command to optimize for
@@ -726,7 +767,9 @@ class FloatManager(Movements, Middleware):
             pass
 
         self.post_commands(all_key=self._TERMSIG)  # Sync to state
-        kwargs["commands"] = kwargs.get("commands", list(Documentation.actions))
+        kwargs["commands"] = kwargs.get(
+            "commands", list(Documentation.actions)
+        )
         self.com_map = {
             c: e
             for c, e in zip(
@@ -769,7 +812,7 @@ class FloatManager(Movements, Middleware):
         _ak = kwargs.get("all", False)
         self.run_flags()  # run user flags, if any
         _filter_id = self.filter_mode
-        kwargs['id'] = self.title_to_id(self.filter_mode)
+        kwargs["id"] = self.title_to_id(self.filter_mode)
         self.post_commands(all_key=_ak, passive=passive)  # sync state
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
@@ -779,7 +822,7 @@ class FloatManager(Movements, Middleware):
                     "modifying_node": self.focused_node,
                     "grid": self.cache_grid,
                     "monitors": self.displays,
-                    "windows": self.current_windows
+                    "windows": self.current_windows,
                 },
             ),
         ).start()  # Anonymous thread, since dataflow is unidirectional.

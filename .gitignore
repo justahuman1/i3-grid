@@ -1,4 +1,6 @@
 __pycache__/
+.vim/
 .pytest_cache/
 .vimspector.json
 dist/
+grid.cache

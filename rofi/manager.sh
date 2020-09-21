@@ -14,7 +14,7 @@ export TXT="#bdc3c3"                    # Text color
 export GRID_FONT="Iosevka 13"           # Font (Include size)
 export ACTIVE="rgba(9, 145, 224, 0.4)"  # Active Cell background
 export SBAR="#242222"                   # Search Bar background
-export GWIDTH="220px"                    # Width of rofi widget
+export GWIDTH="200px"                   # Width of rofi widget (240px works well for 5x5 grid)
 
 ## FIXME: Path to the src python file/module
 grid_src="-m i3grid"

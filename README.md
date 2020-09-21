@@ -172,6 +172,14 @@ PR's very welcome. Order of importance will be according to issues and PR count.
 
 ## Recently Added
 
+### 0.2.4 (In Progress)
+
+- Added smart cache (only cache dynamic choices)
+- Patched UI for rofi 1.6.0 (presented breaking changes)
+- Added a window picker option (run commands on any window, not just currently focused)
+
+### 0.2.3
+
 - Hide all scratch pads with one action (and filter floating windows)
 - Transform all windows in the current screen with a single command (`all` flag)
 - Dynamic monitor sizing (xrandr parsing)
