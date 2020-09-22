@@ -61,7 +61,7 @@ window {
   fullscreen: false;
   // We can make this dynamic for different sized grids
   // via dynamic env vars. Might be pushing the limits of Rofi..
-  width: 220px;
+  width: 240px;
   x-offset: -0.5%;
   padding: 0 0 0 40;
 }
@@ -83,7 +83,7 @@ element {
   border: 1;
   text-color: @item;
   orientation: vertical;
-  padding: 0 0 3 -30;
+  padding: 0 0 3 0;
   border-radius: 6;
 }
 element selected {
@@ -94,7 +94,7 @@ element selected {
 element-icon,
 element-text,
 element-icon {
-  size: 30;
+  size: 0;
   horizontal-align: 0.5;
   vertical-align: 0.5;
 }
