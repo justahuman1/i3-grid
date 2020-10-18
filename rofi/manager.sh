@@ -17,9 +17,9 @@ export SBAR="#242222"                   # Search Bar background
 export GWIDTH="200px"                   # Width of rofi widget (240px works well for 5x5 grid)
 
 ## FIXME: Path to the src python file/module
-grid_src="-m i3grid"
+# grid_src="-m i3grid"
 # Uncomment below line if cloned from github
-# grid_src="../i3-grid/i3grid"
+grid_src="../i3-grid/i3grid"
 # The system python interpreter to use
 PY_ENV="/usr/bin/python3"
 
@@ -125,7 +125,7 @@ else
   "P")
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
     OUTPUT=$("$DIR/i3classifier.sh")
-    $RUN_COMMAND snap --filter "$OUTPUT"
+    $RUN_COMMAND center --filter "$OUTPUT"
     exit
   ;;
   "SF")

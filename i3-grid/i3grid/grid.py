@@ -25,6 +25,7 @@ import os
 import socket
 import subprocess
 import sys
+import re
 import threading
 from collections import namedtuple
 from typing import Dict, List
@@ -45,7 +46,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 try:
-    import i3
+    import i3ipc
 
     collectionsAbc = collections.abc
 except ModuleNotFoundError:
@@ -115,6 +116,7 @@ BASE_CONFIG = {
         ],
     )
 }
+i3 = i3ipc.Connection()
 
 
 class Middleware:
@@ -204,16 +206,16 @@ class Utils:
 
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
-            "resize": lambda *d: i3.resize("set", d[0], d[1]),
-            "move": lambda *d: i3.move("window", "position", d[0], d[1]),
-            "float": lambda *d: i3.floating("enable"),
+            "resize": lambda *d: i3.command(f"resize set {d[0]}, {d[1]}"),
+            "move": lambda *d: i3.command(f"move window position center"),
+            "float": lambda: i3.command("floating enable"),
             "reset": lambda *d: (
-                i3.resize("set", f"{d[0]}ppt", f"{d[0]}ppt")
-                and i3.move("window", " position", "center")
+                i3.command(f"resize  set {d[0]}ppt {d[0]}ppt")
+                # and i3.command("move window position center")
             ),
             "custom": (
-                lambda *d: i3.resize("set", d[0], d[0])
-                and i3.move("window", "position", "center")
+                lambda *d: i3.command(f"resize set {d[0]}, {d[0]}")
+                # and i3.command("move window position center")
             ),
         }
         if isinstance(data, str):
@@ -337,11 +339,11 @@ class FloatUtils:
     metadata."""
 
     def __init__(self) -> None:
-        self.active_output = self.current_floating_windows = None
+        self.active_output = None
         self.area_matrix, self.current_display = self._calc_metadata()
         # self.focus_tree = None
         self.current_windows = self.focus_tree = None
-        assert len(self.current_display) > 0, "Incorrect Display Input"
+        # assert len(self.current_display) > 0, "Incorrect Display Input"
 
     def update_config(self, val: dict) -> bool:
         """Float configration lock manager. Allows
@@ -356,92 +358,37 @@ class FloatUtils:
         return True
 
     def assign_focus_node(self, all_key=False, filter_bypass=False) -> None:
-        self.focus_tree = self.focus_tree or i3.get_tree()
-        wkspc = [
-            node
-            for node in self.focus_tree["nodes"]
-            if node["name"] == self.current_display["output"]
-        ]
-        assert len(wkspc) > 0, "window could not be found"
-
-        for w in wkspc:
-            self.find_focused_window(w)
-
-        if filter_bypass:
-            all_key = True
-
-        if not all_key:
-            return
-
-        print("In filter!")
-
-        wkspc = [
-            k["nodes"] for k in wkspc[0]["nodes"] if k["name"] == "content"
-        ][0]
-        fcsd = [i for i in self.all_outputs if i["focused"]][0]["name"]
-
-        def grep_nest(obj, key, key2, key3) -> list:
-            arr = []  # TODO: change keys to kwargs
-
-            def fetch(obj, arr, key) -> list:
-                if isinstance(obj, dict):
-                    for k, v in obj.items():
-                        if isinstance(v, (dict, list)):
-                            fetch(v, arr, key)
-                        elif k == key:
-                            arr.append((obj[key2], v, obj[key3]))
-                elif isinstance(obj, list):
-                    for item in obj:
-                        fetch(item, arr, key)
-                return arr
-
-            results = fetch(obj, arr, key)
-            return results
-
-        data = [k for k in wkspc if k["name"] == fcsd][0]
-        names = grep_nest(data, "id", key2="name", key3="floating")
-        self.current_windows = [i for i in names if i[0] and i[0] != fcsd]
-        self.current_floating_windows = [i for i in self.current_windows]
-        self._cache_current_windows = True
-
-    def find_focused_window(self, node: dict) -> None:
-        """Sets the focused_node attribute"""
-        # DFS to find the current window
-        if not isinstance(node, dict):
-            return
-        if node["focused"]:
-            self.focused_node = node
-            return
-
-        if (len(node["nodes"]) != 0) or (len(node["floating_nodes"]) != 0):
-            target_nodes = node["nodes"] + node["floating_nodes"]
-            for root in target_nodes:
-                self.find_focused_window(root)
+        # self.focus_tree = self.focus_tree or i3.get_tree()
+        self.focus_tree = i3.get_tree()
+        self.focused_node = self.focus_tree.find_focused().__dict__
+        self.current_windows = [
+               (con.name, con.id) for con in self.focus_tree
+               if con.window and con.parent.type != 'dockarea']
 
     def _calc_metadata(self) -> (DisplayMap, dict):
-        self.displays = i3.get_outputs()
+        self.displays = [o.__dict__ for o in i3.get_outputs()]
         # Widths * Lengths (seperated to retain composition for children)
         total_size = {}
         monitor_cnt = 0
         for display in self.displays:
-            if display["name"].startswith("xroot"):
+            if display['name'].startswith("xroot"):
                 continue
             display_screen_location = Location(
-                width=display["rect"]["width"],
-                height=display["rect"]["height"],
+                width=display['rect'].width,
+                height=display['rect'].height,
             )
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
 
         self.all_outputs = i3.get_workspaces()
-        active = [i for i in self.all_outputs if i["focused"]][0]
-        self.active_output = active["output"]
-        return total_size, active
+        active = [i for i in self.all_outputs if i.focused][0]
+        self.active_output = active.output
+        return total_size, active.__dict__
 
     def get_wk_number(self) -> int:
         c_monitor = 0
         for display in self.displays:
-            if not display["name"].startswith("xroot"):
+            if not display['name'].startswith("xroot"):
                 if self.match(display):
                     break
                 c_monitor += 1
@@ -455,7 +402,7 @@ class FloatUtils:
         ]
         for val in validations:
             if val == "rect":
-                if display[val]["width"] != self.current_display[val]["width"]:
+                if display['rect'].width != self.current_display['rect'].width:
                     return False
             elif display[val[0]] != self.current_display[val[1]]:
                 return False
@@ -544,7 +491,7 @@ class MonitorCalculator(FloatUtils):
 
     def get_target(self, node: dict) -> Location:
         return Location(
-            width=node["rect"]["width"], height=node["rect"]["height"]
+            width=node["rect"].width, height=node["rect"].height
         )
 
     def find_grid_axis(self, loc: int = None) -> tuple:
@@ -594,6 +541,7 @@ class MonitorCalculator(FloatUtils):
                 grid[row][col] = (i, adjusted)
                 i += 1
         self.cache_grid = grid
+        print(self.cache_grid)
         return grid
 
     def multi_pnt_calc(self) -> Tensor:
@@ -633,14 +581,21 @@ class MonitorCalculator(FloatUtils):
         ]
 
     def title_to_id(self, title_or_id: str) -> str:
-        if title_or_id is None:
-            return
-        # logger.info("Title 1: ", title_or_id)
-        print(title_or_id)
-        print("Converting title to id")
-        print(self.current_windows)
-        # logger.info(title_or_id)
-        exit
+        if title_or_id is None or title_or_id[0] == '':
+            return None
+
+        # print(self.current_windows[0])
+
+        title_or_id = " ".join(title_or_id).strip('"')
+        if title_or_id in self.current_windows[0]:
+            print("Matched title/ID")
+        # if not exact match, check regex
+
+        # print(title_or_id)
+        # print("Converting title to id")
+        # print()
+        # print()
+        exit()
 
         # Check if id (number regex)
         # if title_or_id
@@ -763,8 +718,8 @@ class FloatManager(Movements, Middleware):
         floating = kwargs.get("floating", False)
 
         # Filter bypass
-        if self.filter_mode is not None:
-            pass
+        # if self.filter_mode is not None:
+        #     pass
 
         self.post_commands(all_key=self._TERMSIG)  # Sync to state
         kwargs["commands"] = kwargs.get(
@@ -811,7 +766,7 @@ class FloatManager(Movements, Middleware):
         passive = True if cmd in self.passive_actions else False
         _ak = kwargs.get("all", False)
         self.run_flags()  # run user flags, if any
-        _filter_id = self.filter_mode
+        # Filter is a global identifier (takes input str > i3 ID)
         kwargs["id"] = self.title_to_id(self.filter_mode)
         self.post_commands(all_key=_ak, passive=passive)  # sync state
         threading.Thread(  # Thread middleware to speed up action

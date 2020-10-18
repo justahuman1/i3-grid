@@ -71,29 +71,32 @@ class Documentation:
     """The help menu for
     the FloatManager. Presented with
     the '-h' flag."""
+
     actions = {
-            "center": "Center the focused window to a float window",
-            "float": (
-                "Toggle the float of a window (overrides config file for"
-                " otf movements)"
-            ),
-            "resize": "Resize focused window (if float)",
-            "snap": (
-                "Runs grid placement of window (can be combined with all"
-                " other actions). Flag args include rows, cols, and target"
-            ),
-            "csize": "Resize the window into a custom size of screen (1-100)",
-            "hide": "Hide the current window to scratchpad (if scratchpad)."
-            " Can be combined with 'all' flag to clear floating windows in workspace",
-            "reset": "Resets the focused window into the middle occupying"
-            " 75ppt (i3 default) screen space",
-            "listen": (
-                "Socket Listener (sole action) for event binding in native"
-                " Python and command line (Listens on port flag or"
-                " default: 65433)"
-            ),
-            "multi": ("Stretch a window across a range of numbers (Use flag 'multis')"),
-        }
+        "center": "Center the focused window to a float window",
+        "float": (
+            "Toggle the float of a window (overrides config file for"
+            " otf movements)"
+        ),
+        "resize": "Resize focused window (if float)",
+        "snap": (
+            "Runs grid placement of window (can be combined with all"
+            " other actions). Flag args include rows, cols, and target"
+        ),
+        "csize": "Resize the window into a custom size of screen (1-100)",
+        "hide": "Hide the current window to scratchpad (if scratchpad)."
+        " Can be combined with 'all' flag to clear floating windows in workspace",
+        "reset": "Resets the focused window into the middle occupying"
+        " 75ppt (i3 default) screen space",
+        "listen": (
+            "Socket Listener (sole action) for event binding in native"
+            " Python and command line (Listens on port flag or"
+            " default: 65433)"
+        ),
+        "multi": (
+            "Stretch a window across a range of numbers (Use flag 'multis')"
+        ),
+    }
 
     def __init__(self,) -> None:
         super().__init__()
@@ -101,7 +104,9 @@ class Documentation:
         _slc_txt = lambda ax: f"Number of {ax} slices in screen grid {_rc_def}"
         _ffa = lambda action: f"Flag for action: '{action}'"
         _ova = lambda auto: f"Override auto {auto} on the fly to be false"
-        _appl = lambda w: f"Applies the action(s) to all {w} windows in current workspace"
+        _appl = (
+            lambda w: f"Applies the action(s) to all {w} windows in current workspace"
+        )
         self.flags = {
             "cols": {"type": "int", "help": _slc_txt("col")},
             "rows": {"type": "int", "help": _slc_txt("row")},
@@ -128,13 +133,15 @@ class Documentation:
                 "nargs": "+",
                 "help": "The range of numbers to strech the window across."
                 " Ex (4x4 grid): '1 2 3 4' or '1 4' (horizontal) or '1 5 9 13'"
-                "or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
+                " or '1 13' (vertical)  or '1 8' (2 horizontal rows)",
             },
             "filter": {
                 "type": "str",
                 "action": "append",
-                # "nargs": "+",
-                "help": "Filter a window"
+                "nargs": "+",
+                "help": "Filter a window based on regex/name to apply the action."
+                " Applies action to the filtered window based on the i3wm window"
+                " name or i3 window ID."
             },
             "port": {
                 "type": "int",
@@ -143,10 +150,10 @@ class Documentation:
             },
         }
         self.state_flags = {
-            "all": _appl('windows') ,
-            "floating": _appl('floating windows'),
-            "noresize": _ova('resize'),
-            "nofloat": _ova('float'),
+            "all": _appl("windows"),
+            "floating": _appl("floating windows"),
+            "noresize": _ova("resize"),
+            "nofloat": _ova("float"),
         }
 
     def build_parser(self, choices: list) -> ArgumentParser:

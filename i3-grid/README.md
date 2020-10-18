@@ -58,7 +58,7 @@ The method descriptions are as follows:
 
 - run\*
 
-      def run(self, cmd: str, **kwargs) -> list:
+      def run(self, cmd: str, ** kwargs) -> list:
 
       An abstraction over the raw action commands. Dispatches command, updates i3 state,
       and cleans globals/grid leaks. The available commands are as seen in the CLI help menu.
