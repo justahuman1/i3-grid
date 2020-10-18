@@ -58,7 +58,7 @@ grid+=(
   "G" # Guake style window
   "H" # Hide all workspace floating windows, if scratchpad
   "R" # Reset to i3 default center (75% screen)
-  "RR" # ReRun a cached command (drop down option)
+  "RR" # Re-run a cached command (drop down option)
   "SF" # Snaps all current *floating windows into a grid
   "X" # Custom col, row, target parsing
   "P"

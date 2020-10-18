@@ -596,7 +596,7 @@ class MonitorCalculator(FloatUtils):
         self.cache_grid = grid
         return grid
 
-    def multi_pnt_calc(self):
+    def multi_pnt_calc(self) -> Tensor:
         """Calculation for user multipoints. Uses the max min
         procedure to determine top left and bottom right position."""
         chosen_range = [int(i) for i in BASE_CONFIG["multis"]]
@@ -733,11 +733,11 @@ class Movements(MonitorCalculator):
                 d for d in self.current_windows if d[2] == "user_on"
             ]
 
-        BASE_CONFIG["snapLocation"] = 1  # Temporary changes to data
+        BASE_CONFIG["snapLocation"] = 1  # Temporary change to data
         for w in self.current_windows:
             for cmd in commands:
                 self.focus_window(id=w[1])  # focus win
-                self.run(cmd, all=True, **kwargs)  # dispatch final cmd
+                self.run(cmd, all=True, **kwargs)  # dispatch cmd
                 if cmd not in self.passive_actions:  # iterate target
                     BASE_CONFIG["snapLocation"] += 1
         BASE_CONFIG["snapLocation"] = _tmp_loc  # Restore state
