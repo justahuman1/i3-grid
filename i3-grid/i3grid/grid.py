@@ -206,16 +206,16 @@ class Utils:
 
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
-            "resize": lambda *d: i3.command(f"resize set {d[0]}, {d[1]}"),
+            "resize": lambda *d: i3.command(f"resize set {d[0]} {d[1]}"),
             "move": lambda *d: i3.command(f"move window position center"),
             "float": lambda: i3.command("floating enable"),
             "reset": lambda *d: (
                 i3.command(f"resize  set {d[0]}ppt {d[0]}ppt")
-                # and i3.command("move window position center")
+                and i3.command("move window position center")
             ),
             "custom": (
-                lambda *d: i3.command(f"resize set {d[0]}, {d[0]}")
-                # and i3.command("move window position center")
+                lambda *d: i3.command(f"resize set {d[0]} {d[0]}")
+                and i3.command("move window position center")
             ),
         }
         if isinstance(data, str):
@@ -541,7 +541,6 @@ class MonitorCalculator(FloatUtils):
                 grid[row][col] = (i, adjusted)
                 i += 1
         self.cache_grid = grid
-        print(self.cache_grid)
         return grid
 
     def multi_pnt_calc(self) -> Tensor:
