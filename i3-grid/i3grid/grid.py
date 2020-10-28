@@ -133,9 +133,7 @@ class Middleware:
         for i3-grid middleware. Dispatches result to data_mapper"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setblocking(1)
-            logger.info(
-                f"Binding to: {Middleware.host}/{BASE_CONFIG['socketPort']}"
-            )
+            logger.info(f"Binding to: {Middleware.host}/{BASE_CONFIG['socketPort']}")
             s.bind((Middleware.host, BASE_CONFIG["socketPort"]))
             s.listen()
             while True:
@@ -207,11 +205,11 @@ class Utils:
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
             "resize": lambda *d: i3.command(f"resize set {d[0]} {d[1]}"),
-            "move": lambda *d: i3.command(f"move window position center"),
-            "float": lambda: i3.command("floating enable"),
+            "move": lambda *d: i3.command(f"move window position {d[0]} {d[1]}"),
+            "float": lambda *d: i3.command("floating enable"),
+            "center": lambda *d: i3.command("move window position center"),
             "reset": lambda *d: (
                 i3.command(f"resize  set {d[0]}ppt {d[0]}ppt")
-                and i3.command("move window position center")
             ),
             "custom": (
                 lambda *d: i3.command(f"resize set {d[0]} {d[0]}")
@@ -302,9 +300,7 @@ class Utils:
             if kwargs[arg] is None or arg not in cmdline_serializer:
                 continue
             elif arg in _g_tst:
-                BASE_CONFIG["defaultGrid"][cmdline_serializer[arg]] = kwargs[
-                    arg
-                ]
+                BASE_CONFIG["defaultGrid"][cmdline_serializer[arg]] = kwargs[arg]
             elif arg == "target" or arg == "snapLocation":
                 BASE_CONFIG["snapLocation"] = kwargs[arg]
             elif arg == "offset" or arg == "gridOffset":
@@ -320,9 +316,7 @@ class Utils:
     @staticmethod
     def offset_test(o, k) -> List[int]:
         tmp_arr = []
-        assert (
-            len(o) <= 4
-        ), "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
+        assert len(o) <= 4, "Incorrect Offset Arguments (Expected 4: t, r, b, l)"
         while len(o) != 4:
             o += [0]
         tmp_arr = [int(i) for i in o]
@@ -339,7 +333,7 @@ class FloatUtils:
     metadata."""
 
     def __init__(self) -> None:
-        self.active_output = None
+        self.active_output_name = None
         self.area_matrix, self.current_display = self._calc_metadata()
         # self.focus_tree = None
         self.current_windows = self.focus_tree = None
@@ -357,13 +351,19 @@ class FloatUtils:
         self.cache_grid = None  # Update cache
         return True
 
-    def assign_focus_node(self, all_key=False, filter_bypass=False) -> None:
+    def assign_focus_node(self, filter_bypass=False) -> None:
         # self.focus_tree = self.focus_tree or i3.get_tree()
         self.focus_tree = i3.get_tree()
         self.focused_node = self.focus_tree.find_focused().__dict__
+        self.all_windows = [
+            (con.name, con.id)
+            for con in self.focus_tree
+            if con.window and con.parent.type != "dockarea"
+        ]
         self.current_windows = [
-               (con.name, con.id) for con in self.focus_tree
-               if con.window and con.parent.type != 'dockarea']
+            (con.id, con.name, con.floating)
+            for con in self.focus_tree.find_focused().workspace().descendants()
+        ]
 
     def _calc_metadata(self) -> (DisplayMap, dict):
         self.displays = [o.__dict__ for o in i3.get_outputs()]
@@ -371,24 +371,22 @@ class FloatUtils:
         total_size = {}
         monitor_cnt = 0
         for display in self.displays:
-            if display['name'].startswith("xroot"):
+            if display["name"].startswith("xroot"):
                 continue
             display_screen_location = Location(
-                width=display['rect'].width,
-                height=display['rect'].height,
+                width=display["rect"].width, height=display["rect"].height,
             )
             total_size[monitor_cnt] = display_screen_location
             monitor_cnt += 1
 
-        self.all_outputs = i3.get_workspaces()
-        active = [i for i in self.all_outputs if i.focused][0]
-        self.active_output = active.output
+        active = [i for i in i3.get_workspaces() if i.focused][0]
+        self.active_output_name = active.output
         return total_size, active.__dict__
 
     def get_wk_number(self) -> int:
         c_monitor = 0
         for display in self.displays:
-            if not display['name'].startswith("xroot"):
+            if not display["name"].startswith("xroot"):
                 if self.match(display):
                     break
                 c_monitor += 1
@@ -402,7 +400,7 @@ class FloatUtils:
         ]
         for val in validations:
             if val == "rect":
-                if display['rect'].width != self.current_display['rect'].width:
+                if display["rect"].width != self.current_display["rect"].width:
                     return False
             elif display[val[0]] != self.current_display[val[1]]:
                 return False
@@ -422,7 +420,7 @@ class MonitorCalculator(FloatUtils):
         self.xrandr_config = self.cache_grid = None
 
     def calc_monitor_offset(
-        self, mode: str, point: Location  # , loc: int = None
+        self, mode: str, point: Location = None  # , loc: int = None
     ) -> Location:
         """Internal offset manager to apply offsets
         to given quadrant based on operation."""
@@ -433,10 +431,7 @@ class MonitorCalculator(FloatUtils):
         ), "Incorrect Target; not in grid"
         if mode == "resize":
             normalize = lambda *xy: int(
-                (
-                    BASE_CONFIG["gridOffset"][xy[0]]
-                    + BASE_CONFIG["gridOffset"][xy[1]]
-                )
+                (BASE_CONFIG["gridOffset"][xy[0]] + BASE_CONFIG["gridOffset"][xy[1]])
                 / (xy[2] or 1)
             )
             r_l = normalize(3, 1, cols)
@@ -444,8 +439,7 @@ class MonitorCalculator(FloatUtils):
             return Location(point.width - r_l, point.height - t_b)
         elif mode == "snap":
             return Location(
-                width=BASE_CONFIG["gridOffset"][1],
-                height=BASE_CONFIG["gridOffset"][0],
+                width=BASE_CONFIG["gridOffset"][1], height=BASE_CONFIG["gridOffset"][0],
             )
         return point
 
@@ -461,16 +455,18 @@ class MonitorCalculator(FloatUtils):
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
             )
+            logger.info(display_offset)
+            logger.info(target_offset)
+            # data = self.calculate_snap_loc()
+            # return self.xrandr_calulator(data)  # monitor sync
         else:
             # y, x adjusted for accessing matrix
-            y, x = self.find_grid_axis()
-            # 1 is the location (0 is the index)
-            data = self.float_grid[y][x][1]  # naive
+            data = self.calculate_snap_loc()
             return self.xrandr_calulator(data)  # monitor sync
 
         # Heigh is half of the respective monitor
         # The tensors are parallel hence, no summation.
-        # local *centers (not abs)
+        # Calculates local window *centers (not abs)
         center_x = display_offset.width - target_offset.width
         center_y = display_offset.height - target_offset.height
         data = Location(center_x, center_y)
@@ -483,74 +479,45 @@ class MonitorCalculator(FloatUtils):
             self.xrandr_config = self.xrandr_parser()
         for n, monitor in self.xrandr_config.outputs.items():
             monitor = monitor.__dict__
-            if n == self.active_output:
+            if n == self.active_output_name:
                 th = orig_point.height + monitor["position"][1]
                 tw = orig_point.width + monitor["position"][0]
                 return Location(tw, th)
         return orig_point
 
     def get_target(self, node: dict) -> Location:
-        return Location(
-            width=node["rect"].width, height=node["rect"].height
-        )
+        return Location(width=node["rect"].width, height=node["rect"].height)
 
     def find_grid_axis(self, loc: int = None) -> tuple:
+        """Translate front-end grid location to DisplayMap axis"""
         loc = loc or BASE_CONFIG["snapLocation"]
         return divmod(loc - 1, BASE_CONFIG["defaultGrid"]["columns"])
 
-    def calculate_grid(
-        self, rows: int, cols: int, display: Location
-    ) -> Tensor:
-        """Calculates all quadrants in the given xrandr matrix with proper offset
-        querying and management."""
-        main_loc = Location(
-            int(display.width / cols), int(display.height / rows)
-        )
+    def calculate_grid(self, rows: int, cols: int, display: Location):
+        """Sets the instance attributes for quadrant sizing. The istance attributes
+        are used in various calulations and command dispatchment."""
         # Account for window size offset (grid quadrant size - offset/(rows | cols))
+        main_loc = Location(int(display.width / cols), int(display.height / rows))
         self.per_quadrant_dim = self.calc_monitor_offset("resize", main_loc)
-        grid = [[0 for _ in range(cols)] for _ in range(rows)]
-        i = 1
-        rolling_dimension = Location(0, 0)
-        row_match = roll_width = roll_height = 0
-        carry_flag = True
-        for row in range(len(grid)):
-            row_tracker = row
-            for col in range(len(grid[row])):
-                if row != 0 or col != 0:  # Top row and left col
-                    roll_width = (
-                        rolling_dimension.width + self.per_quadrant_dim.width
-                    )
-                if row_match != row_tracker:
-                    roll_height = (
-                        rolling_dimension.height + self.per_quadrant_dim.height
-                    )
-                    row_match = row_tracker
-                    roll_width = 0
-                # Roll from previous grid number
-                rolling_dimension = Location(roll_width, roll_height)
-                if carry_flag:
-                    overlay_top = self.calc_monitor_offset(
-                        "snap", rolling_dimension  # , loc=i
-                    )
-                    adjusted = Location(  # Adjust for offset
-                        abs(roll_width + overlay_top.width),
-                        abs(roll_height + overlay_top.height),
-                    )
-                else:
-                    adjusted = Location(roll_width, roll_height)
-                grid[row][col] = (i, adjusted)
-                i += 1
-        self.cache_grid = grid
-        return grid
 
-    def multi_pnt_calc(self) -> Tensor:
+    def calculate_snap_loc(self, loc: tuple = None) -> Location:
+        """Lazily calculate position on DisplayMap rather than
+        generating the complete grid (as done in v0.2.3b3)"""
+        # (int, int) of grid location
+        snap_location = loc or self.find_grid_axis()
+        # Offset calculation is offloaded to a seperate function
+        offset = self.calc_monitor_offset("snap")
+        height = (snap_location[0] * self.per_quadrant_dim.height) + offset.height
+        width = (snap_location[1] * self.per_quadrant_dim.width) + offset.width
+        return Location(width, height)
+
+    def multi_pnt_calc(self) -> Location:
         """Calculation for user multipoints. Uses the max min
         procedure to determine top left and bottom right position."""
         chosen_range = [int(i) for i in BASE_CONFIG["multis"]]
         mid = (min(chosen_range), max(chosen_range))
         total_size = (
-            BASE_CONFIG["defaultGrid"]["rows"]
-            * BASE_CONFIG["defaultGrid"]["columns"]
+            BASE_CONFIG["defaultGrid"]["rows"] * BASE_CONFIG["defaultGrid"]["columns"]
         )
         assert (
             0 < mid[0] <= total_size and mid[1] <= total_size
@@ -571,7 +538,7 @@ class MonitorCalculator(FloatUtils):
             ),
         )
         self.make_resize()  # Multis requries additional resize
-        return self.cache_grid[loc[0][0]][loc[0][1]]
+        return self.calculate_snap_loc(loc[0])  # Returns the top left point
 
     def get_matrix_center(self, rows, cols, *windows: Location) -> Location:
         return [
@@ -580,7 +547,7 @@ class MonitorCalculator(FloatUtils):
         ]
 
     def title_to_id(self, title_or_id: str) -> str:
-        if title_or_id is None or title_or_id[0] == '':
+        if title_or_id is None or title_or_id[0] == "":
             return None
 
         # print(self.current_windows[0])
@@ -592,8 +559,6 @@ class MonitorCalculator(FloatUtils):
 
         # print(title_or_id)
         # print("Converting title to id")
-        # print()
-        # print()
         exit()
 
         # Check if id (number regex)
@@ -609,12 +574,7 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
-        # True center (accounting for multiple displays)
-        # The height vector is difficult to calculate due to
-        # XRandr offsets (that can extend in any direction).
-        true_center = self.get_offset()
-        # Dispatch final command
-        return Utils.dispatch_i3msg_com(command="move", data=true_center)
+        return Utils.dispatch_i3msg_com(command="center")
 
     def make_resize(self, **kwargs) -> list:
         target_size = self.per_quadrant_dim
@@ -633,10 +593,13 @@ class Movements(MonitorCalculator):
 
     def reset_win(self, **kwargs) -> list:
         """Moves to center and applies default tile
-        to float properties (center, 75ppt)"""
-        return Utils.dispatch_i3msg_com(
-            command="reset", data=str(BASE_CONFIG["defaultResetPercentage"])
+        to float properties (center, {config}ppt)"""
+        Utils.dispatch_i3msg_com(
+            command="reset",
+            data=str(BASE_CONFIG["defaultResetPercentage"]),
         )
+        self.post_commands()  # Resync to window state
+        return self.snap_to_grid()
 
     def make_float(self, **kwargs) -> list:
         """Moves the current window into float mode if it is not
@@ -653,7 +616,8 @@ class Movements(MonitorCalculator):
 
     def focus_window(self, **kwargs) -> list:
         """Focuses on the given kwargs 'id' window"""
-        if "id" not in kwargs and not kwargs["id"]:
+        id = kwargs.get("id", None)
+        if not id:
             raise ValueError("No `id` kwargs given for window focus.")
         dim = Utils.i3_custom("focus", kwargs["id"])
         return Utils.dispatch_bash_command(dim)  # focus
@@ -662,15 +626,11 @@ class Movements(MonitorCalculator):
         """Supports selection ranges
         that are continous and non-perpendicular."""
         # TODO: Extend to id -> Prefocus and dispatch and focus back to orig
-        if BASE_CONFIG["multis"] == 0:
-            return self.move_to_center()
-        elif len(BASE_CONFIG["multis"]) == 1:
+        if BASE_CONFIG["multis"] == 0 or len(BASE_CONFIG["multis"]) == 1:
             return self.move_to_center()
 
         top_left = self.multi_pnt_calc()
-        return Utils.dispatch_i3msg_com(
-            "move", self.xrandr_calulator(top_left[1])
-        )
+        return Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left))
 
     def all_override(self, commands: list, **kwargs) -> List[tuple]:
         """The overrider for the run command to optimize for
@@ -680,7 +640,7 @@ class Movements(MonitorCalculator):
         floating {boolean}: Applies the actions to only the floating windows."""
         global BASE_CONFIG
         _tmp_loc = BASE_CONFIG["snapLocation"]
-        self.post_commands(all_key=True, passive=False)
+        self.post_commands(passive=False)
         # all override for only floating win
         if "floating" in kwargs and kwargs["floating"]:
             self.current_windows = [
@@ -690,7 +650,7 @@ class Movements(MonitorCalculator):
         BASE_CONFIG["snapLocation"] = 1  # Temporary change to data
         for w in self.current_windows:
             for cmd in commands:
-                self.focus_window(id=w[1])  # focus win
+                self.focus_window(id=w[0])  # focus win
                 self.run(cmd, all=True, **kwargs)  # dispatch cmd
                 if cmd not in self.passive_actions:  # iterate target
                     BASE_CONFIG["snapLocation"] += 1
@@ -710,7 +670,7 @@ class FloatManager(Movements, Middleware):
         # 2) Override to on the fly settings
         Utils.on_the_fly_override(serialize=False, **kwargs)
         # 3) Run initalizing commands
-        self.passive_actions = {"resize", "float", "hide", "listen"}
+        self.passive_actions = {"resize", "float", "hide", "listen", "center"}
         self.workspace_num = self.get_wk_number()
         self._TERMSIG = kwargs.get("all", False)
         self.filter_mode = kwargs.get("filter", None)
@@ -720,10 +680,8 @@ class FloatManager(Movements, Middleware):
         # if self.filter_mode is not None:
         #     pass
 
-        self.post_commands(all_key=self._TERMSIG)  # Sync to state
-        kwargs["commands"] = kwargs.get(
-            "commands", list(Documentation.actions)
-        )
+        # self.post_commands(all_key=self._TERMSIG)  # Sync to state
+        kwargs["commands"] = kwargs.get("commands", list(Documentation.actions))
         self.com_map = {
             c: e
             for c, e in zip(
@@ -763,34 +721,34 @@ class FloatManager(Movements, Middleware):
             raise KeyError("No corresponding run command to input:", cmd)
 
         passive = True if cmd in self.passive_actions else False
-        _ak = kwargs.get("all", False)
-        self.run_flags()  # run user flags, if any
         # Filter is a global identifier (takes input str > i3 ID)
         kwargs["id"] = self.title_to_id(self.filter_mode)
-        self.post_commands(all_key=_ak, passive=passive)  # sync state
+        if not kwargs.get("all", False):
+            self.post_commands(passive=passive)  # sync state
+        if not passive:
+            self.run_flags()  # run user flags, if any
         threading.Thread(  # Thread middleware to speed up action
             target=self.dispatch_middleware,
             args=(
                 {
                     "command": cmd,
-                    "modifying_node": self.focused_node,
-                    "grid": self.cache_grid,
-                    "monitors": self.displays,
-                    "windows": self.current_windows,
+                    # "modifying_node": self.focused_node,
+                    # "monitors": self.displays,
+                    # "windows": self.current_windows,
                 },
             ),
         ).start()  # Anonymous thread, since dataflow is unidirectional.
-        return self.com_map[cmd](**kwargs)
+        self.com_map[cmd](**kwargs)
+        return None
 
-    def post_commands(self, all_key=False, passive=False) -> None:
+    def post_commands(self, passive=False) -> None:
         """Runs all the state related commands with
         proper cache maintanence to minimize rpc."""
         if not passive:
-            self.assign_focus_node(all_key, filter_bypass=self.filter_mode)
+            self.assign_focus_node()
 
-        if not self.cache_grid:
-            self.float_grid = self.calculate_grid(
-                BASE_CONFIG["defaultGrid"]["rows"],
-                BASE_CONFIG["defaultGrid"]["columns"],
-                self.area_matrix[self.workspace_num],
-            )
+        self.calculate_grid(
+            BASE_CONFIG["defaultGrid"]["rows"],
+            BASE_CONFIG["defaultGrid"]["columns"],
+            self.area_matrix[self.workspace_num],
+        )
