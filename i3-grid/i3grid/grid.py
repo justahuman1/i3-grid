@@ -27,6 +27,7 @@ import subprocess
 import sys
 import re
 import threading
+import time
 from collections import namedtuple
 from typing import Dict, List
 
@@ -197,37 +198,37 @@ class Utils:
 
     @staticmethod
     def dispatch_i3msg_com(
-        cmd: str, data: Location = Location(1189, 652), id: bool = None
+        cmd: str, data: Location = Location(1189, 652), _id: str = None
     ) -> List[str]:
         """Internal function used to dispatch specific command strings to
         i3-ipc. Data may also be a string."""
-
         dispatcher = {
             # Dictionary of commands to execute with i3 comx
-            "resize": lambda *d: i3.command(f"resize set {d[0]} {d[1]}"),
-            "move": lambda *d: i3.command(f"move window position {d[0]} {d[1]}"),
-            "float": lambda *_: i3.command("floating enable"),
-            "center": lambda *_: i3.command("move window position center"),
-            "reset": lambda *d: (i3.command(f"resize  set {d[0]}ppt {d[0]}ppt")),
+            "resize": lambda *d: f"resize set {d[0]} {d[1]}",
+            "move": lambda *d: f"move window position {d[0]} {d[1]}",
+            "float": lambda *_: "floating enable",
+            "center": lambda *_: "move window position center",
+            "reset": lambda *d: f"resize  set {d[0]}ppt {d[0]}ppt",
             "csize": (
-                lambda *d: i3.command(f"resize set {d[0]} {d[0]}")
-                and i3.command("move window position center")
+                lambda *d: f"resize set {d[0]} {d[0]}"
+                # and "move window position center"
             ),
-            "custom": lambda data: Utils.dispatch_bash_command(data),
+            "custom": lambda data: data,
         }
-        if id:
-            return dispatcher[cmd](Utils.i3_custom(data, id))
-        elif isinstance(data, str):
-            return dispatcher[cmd](data)
+        if isinstance(data, str):
+            res = dispatcher[cmd](data)
+            reflect = Utils.i3_custom(res, _id)
+            return i3.command(reflect)
         elif isinstance(data, Location):
             w = str(data.width) if data.width > 0 else "0"
             h = str(data.height) if data.height > 0 else "0"
-            return dispatcher[cmd](w, h)
+            res = dispatcher[cmd](w, h)
+            reflect = Utils.i3_custom(res, _id)
+            return i3.command(reflect)
 
     @staticmethod
-    def i3_custom(cmd: str, id: str = None) -> str:
-        _b = "i3-msg"  # Multiline string is necessary here (i3 encoding)
-        return f"""{_b} [con_id="{id}"] {cmd}""" if id else ("""{_b} {cmd}""")
+    def i3_custom(cmd: str, _id: str = None) -> str:
+        return f"[con_id={_id}] {cmd}" if _id else cmd
 
     @staticmethod
     def read_config() -> None:
@@ -335,10 +336,9 @@ class FloatUtils:
 
     def __init__(self) -> None:
         self.active_output_name = None
+        self.displays = [o.__dict__ for o in i3.get_outputs()]
         self.area_matrix, self.current_display = self._calc_metadata()
-        # self.focus_tree = None
-        self.current_windows = self.focus_tree = None
-        # assert len(self.current_display) > 0, "Incorrect Display Input"
+        self.current_windows = None
 
     def update_config(self, val: dict) -> bool:
         """Float configration lock manager. Allows
@@ -352,22 +352,32 @@ class FloatUtils:
         self.cache_grid = None  # Update cache
         return True
 
-    def assign_focus_node(self) -> None:
-        # self.focus_tree = self.focus_tree or i3.get_tree()
-        self.focus_tree = i3.get_tree()
-        self.focused_node = self.focus_tree.find_focused().__dict__
-        self.all_windows = [
-            (con.name, con.id)
-            for con in self.focus_tree
-            if con.window and con.parent.type != "dockarea"
-        ]
-        self.current_windows = [
-            (con.id, con.name, con.floating)
-            for con in self.focus_tree.find_focused().workspace().descendants()
-        ]
+    def assign_focus_node(
+        self, filter_mode: bool = False, _id: int = None, ignore: bool = False
+    ) -> None:
+        focus_tree = i3.get_tree()
+        if _id:
+            self.focused_node = focus_tree.find_by_id(int(_id)).__dict__
+        else:
+            self.focused_node = focus_tree.find_focused().__dict__
+        if not ignore:
+            self.current_windows = [  # Only windows from current view
+                (con.id, con.name, con.floating)
+                for con in focus_tree.find_focused().workspace().descendants()
+            ]
+        if filter_mode:
+            # Holds distinct sets for O(1) lookup
+            # {W.Name: [W.id, W.num, ...]}
+            self.all_windows = {}
+            for W in focus_tree:
+                if W.window and W.parent.type != "dockarea":
+                    t = W.name
+                    self.all_windows[W.name] = [W.id, W.num]
+                    while W.num is None:
+                        W = W.parent
+                    self.all_windows[t].append(W.num)
 
     def _calc_metadata(self) -> (DisplayMap, dict):
-        self.displays = [o.__dict__ for o in i3.get_outputs()]
         # Widths * Lengths (seperated to retain composition for children)
         total_size = {}
         monitor_cnt = 0
@@ -456,10 +466,6 @@ class MonitorCalculator(FloatUtils):
             display_offset, target_offset = self.get_matrix_center(
                 2, 2, display, window
             )
-            logger.info(display_offset)
-            logger.info(target_offset)
-            # data = self.calculate_snap_loc()
-            # return self.xrandr_calulator(data)  # monitor sync
         else:
             # y, x adjusted for accessing matrix
             data = self.calculate_snap_loc()
@@ -547,24 +553,32 @@ class MonitorCalculator(FloatUtils):
             for window in windows
         ]
 
-    def title_to_id(self, title_or_id: str) -> str:
-        if title_or_id is None or title_or_id[0] == "":
-            return None
+    def title_to_id(self, filters: List[str]) -> List[str]:
+        if len(filters) == 0 or not isinstance(filters, list):
+            raise ValueError("No filter strings/incorrect type given")
 
-        # print(self.current_windows[0])
+        matching_ids = [None for _ in filters]
+        for i, title_or_id in enumerate(filters):
+            if title_or_id == "" or not isinstance(title_or_id, str):
+                pass
 
-        title_or_id = " ".join(title_or_id).strip('"')
-        if title_or_id in self.current_windows[0]:
-            print("Matched title/ID")
-        # if not exact match, check regex
+            # Astrisk easy type
+            # if title_or_id[:2] == "**"
 
-        # print(title_or_id)
-        # print("Converting title to id")
-        exit()
+            title_or_id = title_or_id.strip('"')
+            if title_or_id in self.all_windows:
+                matching_ids[i] = self.all_windows[title_or_id][0]
+                del self.all_windows[title_or_id]
+            else:
+                # Try regex
+                pat = re.compile(title_or_id)
+                for name in self.all_windows:
+                    if pat.match(name):
+                        matching_ids[i] = self.all_windows[name][0]
+                        del self.all_windows[name]
+                        break
 
-        # Check if id (number regex)
-        # if title_or_id
-        pass
+            return matching_ids
 
 
 class Movements(MonitorCalculator):
@@ -575,57 +589,63 @@ class Movements(MonitorCalculator):
         """Moves the focused window to
         the absolute window center (corresponds to
         target=0)"""
-        return Utils.dispatch_i3msg_com(command="center")
+        _id = kwargs.get("id", None)
+        return Utils.dispatch_i3msg_com(cmd="center", _id=_id)
 
     def make_resize(self, **kwargs) -> List[str]:
         target_size = self.per_quadrant_dim
-        return Utils.dispatch_i3msg_com("resize", data=target_size)
+        _id = kwargs.get("id", None)
+        return Utils.dispatch_i3msg_com("resize", data=target_size, _id=_id)
 
     def custom_resize(self, **kwargs) -> List[str]:
         """Resize window to custom screen percentage"""
+        _id = kwargs.get("id", None)
         cp = BASE_CONFIG["defaultResetPercentage"]
-        return Utils.dispatch_i3msg_com("csize", data=f"{cp}ppt")
+        return Utils.dispatch_i3msg_com("csize", data=f"{cp}ppt", _id=_id)
 
     def snap_to_grid(self, **kwargs) -> List[str]:
         """Moves the focused window to the target
         (default: 0) position in current grid (default: 2*2)"""
+        _id = kwargs.get("id", None)
         true_center = kwargs.get("tc", self.get_offset(center=False,))
-        return Utils.dispatch_i3msg_com("move", true_center)
+        return Utils.dispatch_i3msg_com("move", true_center, _id=_id)
 
     def reset_win(self, **kwargs) -> List[str]:
         """Moves to center and applies default tile
         to float properties (center, {config}ppt)"""
+        _id = kwargs.get("id", None)
         Utils.dispatch_i3msg_com(
-            command="reset", data=str(BASE_CONFIG["defaultResetPercentage"]),
+            cmd="reset", data=str(BASE_CONFIG["defaultResetPercentage"]), _id=_id
         )
-        self.post_commands()  # Resync to window state
-        return self.snap_to_grid()
+        self.post_commands(_id=_id, ignore=True)  # Resync to window state
+        return self.snap_to_grid(id=_id)
 
     def make_float(self, **kwargs) -> List[str]:
         """Moves the current window into float mode if it is not
         float. If float, do nothing. Does not resize but i3 does so
         by default sometimes (based on config and instance rules)."""
-        return Utils.dispatch_i3msg_com(command="float")
+        _id = kwargs.get("id", None)
+        return Utils.dispatch_i3msg_com(cmd="float", data="float", _id=_id)
 
     def hide_scratchpad(self, **kwargs) -> List[str]:
         """Hides the current window (if
         scratchpad) or to kwargs `id` window."""
-        id = kwargs.get("id", None)
-        return Utils.dispatch_bash_command("custom", "scratchpad show", id=id)
+        _id = kwargs.get("id", None)
+        # return Utils.dispatch_bash_command("custom", "scratchpad show", _id=_id)
 
     def focus_window(self, **kwargs) -> List[str]:
         """Focuses on the given kwargs 'id' window"""
-        id = kwargs.get("id", None)
-        if not id:
+        _id = kwargs.get("id", None)
+        if not _id:
             raise ValueError("No `id` kwargs given for window focus.")
-        return Utils.dispatch_bash_command("custom", "focus", id)
+        return Utils.dispatch_i3msg_com("custom", "focus", _id)
 
     def multi_select(self, **kwargs) -> List[str]:
         """Supports selection ranges
         that are continous and non-perpendicular."""
-        # TODO: Extend to id -> Prefocus and dispatch and focus back to orig
+        _id = kwargs.get("id", None)
         if BASE_CONFIG["multis"] == 0 or len(BASE_CONFIG["multis"]) == 1:
-            return self.move_to_center()
+            return self.move_to_center(id=_id)
 
         top_left = self.multi_pnt_calc()
         return Utils.dispatch_i3msg_com("move", self.xrandr_calulator(top_left))
@@ -633,32 +653,43 @@ class Movements(MonitorCalculator):
     def filter_override(self, actions: str, filter_by: List[str], **kwargs):
         if len(filter_by) == 0 or not isinstance(filter_by, list):
             raise ValueError("No window filter strings/incorrect type given")
-        for action in actions:
-            # Filter is a global identifier (takes input str > i3 ID)
-            kwargs["id"] = self.title_to_id(self.filter_mode)
-        exit()
+        # Sync state
+        self.post_commands(filter_mode=True, ignore=True)
+        # Filter is a global identifier (takes input str > i3 ID)
+        windows = self.title_to_id(filter_by)
+        # For each window, apply all given actions
+        # W -> [id, focused]
+        for W in windows:
+            # if not W[1]:
+            #     # Change workspace and display
+            #     print(W)
+            for action in actions:
+                self.run(action, id=W, ignore=True)
 
-    def all_override(self, commands: List[str], **kwargs) -> List[tuple]:
+    def all_override(self, actions: List[str], **kwargs) -> List[tuple]:
         """The overrider for the run command to optimize for
         multiple actions. Automatically syncs the i3 state
-        between each given command (from commandse). All kwargs are passed
-        to the run function. Kwargs:
-        floating {boolean}: Applies the actions to only the floating windows."""
+        between each given action (from actions). All kwargs
+        are passed to the run function.
+        Accepted Kwargs:
+            floating {boolean}: Applies the actions to only the floating windows."""
         global BASE_CONFIG
         _tmp_loc = BASE_CONFIG["snapLocation"]
-        self.post_commands(passive=False)
+        self.post_commands()
         # all override for only floating win
         if "floating" in kwargs and kwargs["floating"]:
             self.current_windows = [
                 d for d in self.current_windows if d[2] == "user_on"
             ]
 
-        BASE_CONFIG["snapLocation"] = 1  # Temporary change to data
+        BASE_CONFIG["snapLocation"] = 0  # Temporary change to data
         for w in self.current_windows:
-            for cmd in commands:
+            # print(w)
+            # continue
+            for action in actions:
                 self.focus_window(id=w[0])  # focus win
-                self.run(cmd, all=True, **kwargs)  # dispatch cmd
-                if cmd not in self.passive_actions:  # iterate target
+                self.run(action, all=True, **kwargs)  # dispatch cmd
+                if action not in self.passive_actions:  # iterate target
                     BASE_CONFIG["snapLocation"] += 1
         BASE_CONFIG["snapLocation"] = _tmp_loc  # Restore state
 
@@ -704,6 +735,8 @@ class FloatManager(Movements, Middleware):
 
         # Filter bypass
         if self.filter_mode:
+            if "actions" not in kwargs:
+                raise ValueError("Missing kwargs `commands` for all_override")
             self.filter_override(kwargs["actions"], self.filter_mode)
             self._TERMSIG = True  # Exit point for CLI
             return
@@ -714,11 +747,12 @@ class FloatManager(Movements, Middleware):
             self._TERMSIG = True  # Exit point for CLI
             return
 
-    def run_flags(self) -> None:
+    def run_flags(self, **kwargs) -> None:
         if BASE_CONFIG["autoConvertToFloat"]:
-            self.make_float()
+            self.make_float(id=kwargs.get("id", None))
         if BASE_CONFIG["autoResize"]:
-            self.make_resize()
+            if not kwargs.get('cmd', None) in self.passive_actions:
+                self.make_resize(id=kwargs.get("id", None))
 
     def run(self, cmd: str, **kwargs) -> List[str]:
         """The main command dispatcher. Used to abstract state syncronization.
@@ -727,11 +761,9 @@ class FloatManager(Movements, Middleware):
         if cmd not in self.com_map:
             raise KeyError("No corresponding run command to input:", cmd)
 
-        passive = True if cmd in self.passive_actions else False
-        if not kwargs.get("all", False):
-            self.post_commands(passive=passive)  # sync state
-        if not passive:
-            self.run_flags()  # run user flags, if any
+        _id = kwargs.get("id", None)
+        self.post_commands(_id=_id, ignore=kwargs.get("ignore", False))
+        self.run_flags(id=_id, cmd=cmd)  # run user flags, if any
         # threading.Thread(  # Thread middleware to speed up action
         #     target=self.dispatch_middleware,
         #     args=(
@@ -743,14 +775,14 @@ class FloatManager(Movements, Middleware):
         #         },
         #     ),
         # ).start()  # Anonymous thread, since dataflow is unidirectional.
-        self.com_map[cmd](**kwargs)
-        return None
+        return self.com_map[cmd](**kwargs)
 
-    def post_commands(self, passive=False) -> None:
+    def post_commands(
+        self, filter_mode: bool = False, _id: str = None, ignore=False
+    ) -> None:
         """Runs all the state related commands with
         proper cache maintanence to minimize rpc."""
-        if not passive:
-            self.assign_focus_node()
+        self.assign_focus_node(filter_mode, _id=_id, ignore=ignore)
 
         self.calculate_grid(
             BASE_CONFIG["defaultGrid"]["rows"],
