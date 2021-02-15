@@ -123,6 +123,45 @@ See the following for more detailed examples:
 [CLI Examples](https://github.com/justahuman1/i3-grid/blob/master/rofi/manager.sh),
 [Library Examples](https://github.com/justahuman1/i3-grid/blob/master/lib_example.py)
 
+### i3 Modes:
+
+Modes prevent having to sacrifice multiple key shortcuts. This maps the left side of the
+keyboard to quadrants on your monitor (reflective of the key in position of the board).
+Once you enter this mode, toggle different window shapes and exit mode to default actions.
+
+```
+# Grid floating windows
+mode "i3grid" {
+    bindsym q exec "python3 -m i3grid snap --cols 2 --rows 2 --target 1"
+    bindsym e exec "python3 -m i3grid snap --cols 2 --rows 2 --target 2"
+    bindsym z exec "python3 -m i3grid snap --cols 2 --rows 2 --target 3"
+    bindsym c exec "python3 -m i3grid snap --cols 2 --rows 2 --target 4"
+
+    bindsym w exec "python3 -m i3grid snap --cols 1 --rows 2 --target 1"
+    bindsym x exec "python3 -m i3grid snap --cols 1 --rows 2 --target 2"
+
+    bindsym a exec "python3 -m i3grid snap --cols 2 --rows 1 --target 1"
+    bindsym d exec "python3 -m i3grid snap --cols 2 --rows 1 --target 2"
+    bindsym s exec "python3 -m i3grid reset"
+    bindsym f exec "python3 -m i3grid csize --perc 100"
+
+    bindsym g exec "python3 -m i3grid csize --perc 33"
+    bindsym h exec "python3 -m i3grid csize --perc 50"
+    bindsym j exec "python3 -m i3grid csize --perc 66"
+    bindsym k exec "python3 -m i3grid csize --perc 85"
+    bindsym l exec "python3 -m i3grid csize --perc 92"
+    bindsym p exec "python3 -m i3grid snap --cols 3 --rows 3 --target 3"
+    bindsym o exec "python3 -m i3grid snap --cols 3 --rows 3 --target 2"
+    bindsym i exec "python3 -m i3grid snap --cols 3 --rows 3 --target 1"
+
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+    bindsym m mode "default"
+    bindsym n mode "default"
+}
+bindsym $mod+shift+o mode "i3grid"
+```
+
 ## Features
 
 - Reshape and pin floating windows to any precise locations on screen
