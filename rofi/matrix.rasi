@@ -96,6 +96,7 @@ element-text,
 element-icon {
   size: 0;
   horizontal-align: 0.5;
+  text-color: inherit;
   vertical-align: 0.5;
 }
 inputbar {
