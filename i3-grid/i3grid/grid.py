@@ -760,9 +760,15 @@ class FloatManager(Movements, Middleware):
         if not passive:
             self.assign_focus_node(all_key)
 
+        workspaces = i3.get_workspaces()
+        focused_workspace = [w for w in workspaces if w['focused']][0]
+        focused_output = focused_workspace['output']
+        current_outputs = i3.get_outputs()
+        current_output_tmp = [w for w in current_outputs if w['name'] != "xroot-0"]
+        current_output_index = next((index for (index, d) in enumerate(current_output_tmp) if d["name"] == focused_output), None)
         if not self.cache_grid:
             self.float_grid = self.calculate_grid(
                 BASE_CONFIG["defaultGrid"]["rows"],
                 BASE_CONFIG["defaultGrid"]["columns"],
-                self.area_matrix[self.workspace_num],
+                self.area_matrix[current_output_index],
             )
